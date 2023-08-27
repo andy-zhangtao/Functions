@@ -33,8 +33,8 @@ type weaviateClient struct {
 
 func NewWeaviateClient(host, schema, key string) (*weaviateClient, error) {
 	cfg := weaviate.Config{
-		Host:       "localhost:8080",
-		Scheme:     "http",
+		Host:       host,
+		Scheme:     schema,
 		AuthConfig: auth.ApiKey{Value: key},
 	}
 	client, err := weaviate.NewClient(cfg)
