@@ -98,6 +98,11 @@ func DirayCreate(w http.ResponseWriter, r *http.Request) {
 		dcm.Version = RequestVersionDefault
 	}
 
+	// output all envoriment variables
+	for _, e := range os.Environ() {
+		logrus.Infof("%v", e)
+	}
+
 	wc, err := NewWeaviateClient(os.Getenv(EnvWeaviateHost), os.Getenv(EnvWeaviateSchema), os.Getenv(EnvWewaviateKey))
 	if err != nil {
 		logrus.Errorf("Error creating weaviate client: %v", err)
