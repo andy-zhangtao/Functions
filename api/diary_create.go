@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 
@@ -10,37 +11,29 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func DirayCreate(w http.ResponseWriter, r *http.Request) {
+// DirayCreate create a new diary
+// @Summary create a new diary
+// @Description create a new diary
+// @Tags diary
+// @Accept  json
+// @Produce  json
+func DirayCreate(data string) (err error) {
 
-	// chech the http method , only allow POST method
-	if r.Method != "POST" {
-		http.Error(w, "Method is not supported.", http.StatusNotFound)
-		return
-	}
-
-	// get the body of the request
 	var dcm types.DirayCreateModel
-	err := json.NewDecoder(r.Body).Decode(&dcm)
+	err = json.Unmarshal([]byte(data), &dcm)
 	if err != nil {
 		logrus.Errorf("Error parsing request body: %v", err)
-		errorResponse(w, err)
-		return
+		return err
 	}
 
 	if dcm.Version == "" {
 		dcm.Version = types.RequestVersionDefault
 	}
 
-	// output all envoriment variables
-	for _, e := range os.Environ() {
-		logrus.Infof("%v", e)
-	}
-
 	wc, err := types.NewWeaviateClient(os.Getenv(types.EnvWeaviateHost), os.Getenv(types.EnvWeaviateSchema), os.Getenv(types.EnvWewaviateKey))
 	if err != nil {
 		logrus.Errorf("Error creating weaviate client: %v", err)
-		errorResponse(w, err)
-		return
+		return fmt.Errorf("error creating weaviate client: %v", err)
 	}
 
 	switch dcm.Version {
@@ -48,8 +41,7 @@ func DirayCreate(w http.ResponseWriter, r *http.Request) {
 		err = checkV1(dcm)
 		if err != nil {
 			logrus.Errorf("Error parsing request body: %v", err)
-			errorResponse(w, err)
-			return
+			return fmt.Errorf("error parsing request body: %v", err)
 		}
 
 		err = wc.AddNewRecord(types.DiaryClassName, map[string]string{
@@ -58,18 +50,96 @@ func DirayCreate(w http.ResponseWriter, r *http.Request) {
 		})
 		if err != nil {
 			logrus.Errorf("Error creating weaviate record: %v", err)
-			errorResponse(w, err)
-			return
+			return fmt.Errorf("error creating weaviate record: %v", err)
 		}
 
-		commonResponse(w, http.StatusOK, types.DirayCreateResponse{
-			Code: http.StatusOK,
-		})
+		return nil
 	default:
+		logrus.Errorf("Error parsing request body: %v", err)
+		return fmt.Errorf("error parsing request body: %v", err)
+	}
+}
+
+func DirayCreateHandler(w http.ResponseWriter, r *http.Request) {
+
+	// chech the http method , only allow POST method
+	if r.Method != "POST" {
+		http.Error(w, "Method is not supported.", http.StatusNotFound)
+		return
+	}
+
+	data, err := io.ReadAll(r.Body)
+	if err != nil {
 		logrus.Errorf("Error parsing request body: %v", err)
 		errorResponse(w, err)
 		return
 	}
+
+	logrus.Infof("request body: %v", string(data))
+
+	err = DirayCreate(string(data))
+	if err != nil {
+		logrus.Errorf("Error parsing request body: %v", err)
+		errorResponse(w, err)
+		return
+	}
+
+	commonResponse(w, http.StatusOK, types.DirayCreateResponse{
+		Code: http.StatusOK,
+	})
+
+	// get the body of the request
+	// var dcm types.DirayCreateModel
+	// err := json.NewDecoder(r.Body).Decode(&dcm)
+	// if err != nil {
+	// 	logrus.Errorf("Error parsing request body: %v", err)
+	// 	errorResponse(w, err)
+	// 	return
+	// }
+
+	// if dcm.Version == "" {
+	// 	dcm.Version = types.RequestVersionDefault
+	// }
+
+	// // output all envoriment variables
+	// for _, e := range os.Environ() {
+	// 	logrus.Infof("%v", e)
+	// }
+
+	// wc, err := types.NewWeaviateClient(os.Getenv(types.EnvWeaviateHost), os.Getenv(types.EnvWeaviateSchema), os.Getenv(types.EnvWewaviateKey))
+	// if err != nil {
+	// 	logrus.Errorf("Error creating weaviate client: %v", err)
+	// 	errorResponse(w, err)
+	// 	return
+	// }
+
+	// switch dcm.Version {
+	// case types.RequestVersionV1:
+	// 	err = checkV1(dcm)
+	// 	if err != nil {
+	// 		logrus.Errorf("Error parsing request body: %v", err)
+	// 		errorResponse(w, err)
+	// 		return
+	// 	}
+
+	// 	err = wc.AddNewRecord(types.DiaryClassName, map[string]string{
+	// 		"user":    dcm.User,
+	// 		"content": dcm.Body,
+	// 	})
+	// 	if err != nil {
+	// 		logrus.Errorf("Error creating weaviate record: %v", err)
+	// 		errorResponse(w, err)
+	// 		return
+	// 	}
+
+	// 	commonResponse(w, http.StatusOK, types.DirayCreateResponse{
+	// 		Code: http.StatusOK,
+	// 	})
+	// default:
+	// 	logrus.Errorf("Error parsing request body: %v", err)
+	// 	errorResponse(w, err)
+	// 	return
+	// }
 
 }
 
