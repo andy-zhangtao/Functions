@@ -1,4 +1,4 @@
-module andy-zhangtao/Functions
+module github.com/andy-zhangtao/Functions
 
 go 1.20
 
