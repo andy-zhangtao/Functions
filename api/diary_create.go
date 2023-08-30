@@ -1,12 +1,12 @@
 package handler
 
 import (
-	"andy-zhangtao/Functions/types"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 
+	"github.com/andy-zhangtao/Functions/types"
 	"github.com/sirupsen/logrus"
 )
 
