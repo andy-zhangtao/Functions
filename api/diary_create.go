@@ -1,81 +1,14 @@
 package handler
 
 import (
-	"context"
+	"andy-zhangtao/Functions/types"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 
 	"github.com/sirupsen/logrus"
-	"github.com/weaviate/weaviate-go-client/v4/weaviate"
-	"github.com/weaviate/weaviate-go-client/v4/weaviate/auth"
 )
-
-const (
-	RequestVersionDefault = RequestVersionV1
-	RequestVersionV1      = "v1"
-)
-
-const (
-	EnvWeaviateHost   = "WEAVIATE_HOST"
-	EnvWeaviateSchema = "WEAVIATE_SCHEMA"
-	EnvWewaviateKey   = "WEAVIATE_KEY"
-)
-
-const (
-	DiaryClassName = "Diary"
-)
-
-type weaviateClient struct {
-	client *weaviate.Client
-}
-
-func NewWeaviateClient(host, schema, key string) (*weaviateClient, error) {
-	cfg := weaviate.Config{
-		Host:       host,
-		Scheme:     schema,
-		AuthConfig: auth.ApiKey{Value: key},
-	}
-	client, err := weaviate.NewClient(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("could not create weaviate client: %v", err)
-	}
-
-	return &weaviateClient{
-		client: client,
-	}, nil
-}
-
-func (wc *weaviateClient) AddNewRecord(class string, properties map[string]string) error {
-	data := make(map[string]string)
-
-	for key, val := range properties {
-		data[key] = val
-	}
-
-	created, err := wc.client.Data().Creator().WithClassName(class).WithProperties(data).Do(context.Background())
-	if err != nil {
-		return fmt.Errorf("could not create record: %v", err)
-	}
-
-	logrus.Infof("Created record with id [%+v]", created)
-	return nil
-}
-
-type DirayCreateModel struct {
-	User    string      `json:"user"`
-	Body    string      `json:"body"`
-	Tags    []string    `json:"tags"`
-	Mask    interface{} `json:"mask,omitempty"`
-	Version string      `json:"version"`
-}
-
-type DirayCreateResponse struct {
-	Version string `json:"version"`
-	Msg     string `json:"msg"`
-	Code    int    `json:"code"`
-}
 
 func DirayCreate(w http.ResponseWriter, r *http.Request) {
 
@@ -86,7 +19,7 @@ func DirayCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get the body of the request
-	var dcm DirayCreateModel
+	var dcm types.DirayCreateModel
 	err := json.NewDecoder(r.Body).Decode(&dcm)
 	if err != nil {
 		logrus.Errorf("Error parsing request body: %v", err)
@@ -95,7 +28,7 @@ func DirayCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if dcm.Version == "" {
-		dcm.Version = RequestVersionDefault
+		dcm.Version = types.RequestVersionDefault
 	}
 
 	// output all envoriment variables
@@ -103,7 +36,7 @@ func DirayCreate(w http.ResponseWriter, r *http.Request) {
 		logrus.Infof("%v", e)
 	}
 
-	wc, err := NewWeaviateClient(os.Getenv(EnvWeaviateHost), os.Getenv(EnvWeaviateSchema), os.Getenv(EnvWewaviateKey))
+	wc, err := types.NewWeaviateClient(os.Getenv(types.EnvWeaviateHost), os.Getenv(types.EnvWeaviateSchema), os.Getenv(types.EnvWewaviateKey))
 	if err != nil {
 		logrus.Errorf("Error creating weaviate client: %v", err)
 		errorResponse(w, err)
@@ -111,7 +44,7 @@ func DirayCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch dcm.Version {
-	case RequestVersionV1:
+	case types.RequestVersionV1:
 		err = checkV1(dcm)
 		if err != nil {
 			logrus.Errorf("Error parsing request body: %v", err)
@@ -119,7 +52,7 @@ func DirayCreate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = wc.AddNewRecord(DiaryClassName, map[string]string{
+		err = wc.AddNewRecord(types.DiaryClassName, map[string]string{
 			"user":    dcm.User,
 			"content": dcm.Body,
 		})
@@ -129,7 +62,7 @@ func DirayCreate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		commonResponse(w, http.StatusOK, DirayCreateResponse{
+		commonResponse(w, http.StatusOK, types.DirayCreateResponse{
 			Code: http.StatusOK,
 		})
 	default:
@@ -141,7 +74,7 @@ func DirayCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 // checkV1 check the request body for v1
-func checkV1(dcm DirayCreateModel) error {
+func checkV1(dcm types.DirayCreateModel) error {
 	if dcm.User == "" {
 		return fmt.Errorf("user is empty")
 	}
@@ -155,21 +88,21 @@ func checkV1(dcm DirayCreateModel) error {
 
 // errorResponse return the error response
 func errorResponse(w http.ResponseWriter, err error) {
-	commonResponse(w, http.StatusBadRequest, DirayCreateResponse{
+	commonResponse(w, http.StatusBadRequest, types.DirayCreateResponse{
 		Code:    http.StatusBadRequest,
 		Msg:     err.Error(),
-		Version: RequestVersionDefault,
+		Version: types.RequestVersionDefault,
 	})
 }
 
 // commonResponse
-func commonResponse(w http.ResponseWriter, code int, data DirayCreateResponse) {
+func commonResponse(w http.ResponseWriter, code int, data types.DirayCreateResponse) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 
 	json.NewEncoder(w).Encode(data)
 }
 
-func createWeaviateRecord(dcm DirayCreateModel) error {
+func createWeaviateRecord(dcm types.DirayCreateModel) error {
 	return nil
 }
