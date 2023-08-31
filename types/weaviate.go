@@ -7,6 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/weaviate/weaviate-go-client/v4/weaviate"
 	"github.com/weaviate/weaviate-go-client/v4/weaviate/auth"
+	"github.com/weaviate/weaviate-go-client/v4/weaviate/data"
 )
 
 const (
@@ -44,7 +45,7 @@ func NewWeaviateClient(host, schema, key string) (*WeaviateClient, error) {
 	}, nil
 }
 
-func (wc *WeaviateClient) AddNewRecord(class string, properties map[string]string) error {
+func (wc *WeaviateClient) AddNewRecord(class string, properties map[string]string) (*data.ObjectWrapper, error) {
 	data := make(map[string]string)
 
 	for key, val := range properties {
@@ -53,11 +54,11 @@ func (wc *WeaviateClient) AddNewRecord(class string, properties map[string]strin
 
 	created, err := wc.client.Data().Creator().WithClassName(class).WithProperties(data).Do(context.Background())
 	if err != nil {
-		return fmt.Errorf("could not create record: %v", err)
+		return nil, fmt.Errorf("could not create record: %v", err)
 	}
 
 	logrus.Infof("Created record with id [%+v]", created)
-	return nil
+	return created, nil
 }
 
 type DirayCreateModel struct {

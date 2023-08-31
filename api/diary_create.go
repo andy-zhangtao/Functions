@@ -10,6 +10,7 @@ import (
 
 	"github.com/andy-zhangtao/Functions/types"
 	"github.com/sirupsen/logrus"
+	"github.com/weaviate/weaviate-go-client/v4/weaviate/data"
 )
 
 // DirayCreate create a new diary
@@ -18,13 +19,13 @@ import (
 // @Tags diary
 // @Accept  json
 // @Produce  json
-func DirayCreate(data string) (err error) {
+func DirayCreate(data string) (object *data.ObjectWrapper, err error) {
 
 	var dcm types.DirayCreateModel
 	err = json.Unmarshal([]byte(data), &dcm)
 	if err != nil {
 		logrus.Errorf("Error parsing request body: %v", err)
-		return err
+		return object, err
 	}
 
 	if dcm.Version == "" {
@@ -40,7 +41,7 @@ func DirayCreate(data string) (err error) {
 	wc, err := types.NewWeaviateClient(os.Getenv(types.EnvWeaviateHost), os.Getenv(types.EnvWeaviateSchema), os.Getenv(types.EnvWewaviateKey))
 	if err != nil {
 		logrus.Errorf("Error creating weaviate client: %v", err)
-		return fmt.Errorf("error creating weaviate client: %v", err)
+		return object, fmt.Errorf("error creating weaviate client: %v", err)
 	}
 
 	switch dcm.Version {
@@ -48,23 +49,23 @@ func DirayCreate(data string) (err error) {
 		err = checkV1(dcm)
 		if err != nil {
 			logrus.Errorf("Error parsing request body: %v", err)
-			return fmt.Errorf("error parsing request body: %v", err)
+			return object, fmt.Errorf("error parsing request body: %v", err)
 		}
 
-		err = wc.AddNewRecord(types.DiaryClassName, map[string]string{
+		object, err = wc.AddNewRecord(types.DiaryClassName, map[string]string{
 			"user":    dcm.User,
 			"content": dcm.Body,
 			"date":    dcm.Date,
 		})
 		if err != nil {
 			logrus.Errorf("Error creating weaviate record: %v", err)
-			return fmt.Errorf("error creating weaviate record: %v", err)
+			return object, fmt.Errorf("error creating weaviate record: %v", err)
 		}
 
-		return nil
+		return object, nil
 	default:
 		logrus.Errorf("Not support version: %v", dcm.Version)
-		return fmt.Errorf("not support version: %v", dcm.Version)
+		return object, fmt.Errorf("not support version: %v", dcm.Version)
 	}
 }
 
@@ -85,7 +86,7 @@ func DirayCreateHandler(w http.ResponseWriter, r *http.Request) {
 
 	logrus.Infof("request body: %v", string(data))
 
-	err = DirayCreate(string(data))
+	object, err := DirayCreate(string(data))
 	if err != nil {
 		logrus.Errorf("Error parsing request body: %v", err)
 		errorResponse(w, err)
@@ -94,6 +95,7 @@ func DirayCreateHandler(w http.ResponseWriter, r *http.Request) {
 
 	commonResponse(w, http.StatusOK, types.DirayCreateResponse{
 		Code: http.StatusOK,
+		Msg:  object.Object.ID.String(),
 	})
 
 	// get the body of the request
