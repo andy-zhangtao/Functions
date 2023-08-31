@@ -63,6 +63,7 @@ func (wc *WeaviateClient) AddNewRecord(class string, properties map[string]strin
 type DirayCreateModel struct {
 	User    string      `json:"user"`
 	Body    string      `json:"body"`
+	Date    string      `json:"date,omitempty"`
 	Tags    []string    `json:"tags"`
 	Mask    interface{} `json:"mask,omitempty"`
 	Version string      `json:"version"`
