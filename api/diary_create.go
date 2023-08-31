@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/andy-zhangtao/Functions/types"
 	"github.com/sirupsen/logrus"
@@ -30,6 +31,12 @@ func DirayCreate(data string) (err error) {
 		dcm.Version = types.RequestVersionDefault
 	}
 
+	if dcm.Date == "" {
+		// use yyyy-mm-dd format
+		t := time.Now()
+		dcm.Date = fmt.Sprintf("%d-%02d-%02d", t.Year(), t.Month(), t.Day())
+	}
+
 	wc, err := types.NewWeaviateClient(os.Getenv(types.EnvWeaviateHost), os.Getenv(types.EnvWeaviateSchema), os.Getenv(types.EnvWewaviateKey))
 	if err != nil {
 		logrus.Errorf("Error creating weaviate client: %v", err)
@@ -47,6 +54,7 @@ func DirayCreate(data string) (err error) {
 		err = wc.AddNewRecord(types.DiaryClassName, map[string]string{
 			"user":    dcm.User,
 			"content": dcm.Body,
+			"date":    dcm.Date,
 		})
 		if err != nil {
 			logrus.Errorf("Error creating weaviate record: %v", err)
