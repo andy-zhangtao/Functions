@@ -55,8 +55,8 @@ func DirayCreate(data string) (err error) {
 
 		return nil
 	default:
-		logrus.Errorf("Error parsing request body: %v", err)
-		return fmt.Errorf("error parsing request body: %v", err)
+		logrus.Errorf("Not support version: %v", dcm.Version)
+		return fmt.Errorf("not support version: %v", dcm.Version)
 	}
 }
 
