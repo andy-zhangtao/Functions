@@ -75,3 +75,18 @@ type DirayCreateResponse struct {
 	Msg     string `json:"msg"`
 	Code    int    `json:"code"`
 }
+
+type DirayQueryModel struct {
+	Version string   `json:"version"`
+	User    string   `json:"user"`
+	Date    string   `json:"date,omitempty"`
+	Tags    []string `json:"tags,omitempty"`
+	Keys    []string `json:"keys,omitempty"`
+}
+
+type DirayQueryResponse struct {
+	Version string   `json:"version"`
+	Status  string   `json:"status"`
+	Code    int      `json:"code"`
+	Records []string `json:"records"`
+}
