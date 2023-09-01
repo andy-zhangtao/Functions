@@ -3,6 +3,7 @@ package types
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/weaviate/weaviate-go-client/v4/weaviate"
@@ -45,8 +46,8 @@ func NewWeaviateClient(host, schema, key string) (*WeaviateClient, error) {
 	}, nil
 }
 
-func (wc *WeaviateClient) AddNewRecord(class string, properties map[string]string) (*data.ObjectWrapper, error) {
-	data := make(map[string]string)
+func (wc *WeaviateClient) AddNewRecord(class string, properties map[string]interface{}) (*data.ObjectWrapper, error) {
+	data := make(map[string]interface{})
 
 	for key, val := range properties {
 		data[key] = val
@@ -62,12 +63,13 @@ func (wc *WeaviateClient) AddNewRecord(class string, properties map[string]strin
 }
 
 type DirayCreateModel struct {
-	User    string      `json:"user"`
-	Body    string      `json:"body"`
-	Date    string      `json:"date,omitempty"`
-	Tags    []string    `json:"tags"`
-	Mask    interface{} `json:"mask,omitempty"`
-	Version string      `json:"version"`
+	User     string      `json:"user"`
+	Body     string      `json:"body"`
+	Date     string      `json:"date,omitempty"`
+	Tags     []string    `json:"tags"`
+	Mask     interface{} `json:"mask,omitempty"`
+	Version  string      `json:"version"`
+	DateSave time.Time   `json:"-"` // not used in json
 }
 
 type DirayCreateResponse struct {
