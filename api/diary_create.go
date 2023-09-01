@@ -38,6 +38,15 @@ func DirayCreate(data string) (object *data.ObjectWrapper, err error) {
 		dcm.Date = fmt.Sprintf("%d-%02d-%02d", t.Year(), t.Month(), t.Day())
 	}
 
+	// parse dcm.Date to time.Time
+	t, err := time.Parse("2006-01-02", dcm.Date)
+	if err != nil {
+		logrus.Errorf("Error parsing request body: %v", err)
+		return object, fmt.Errorf("error parsing request body: %v", err)
+	}
+
+	dcm.DateSave = t
+
 	wc, err := types.NewWeaviateClient(os.Getenv(types.EnvWeaviateHost), os.Getenv(types.EnvWeaviateSchema), os.Getenv(types.EnvWewaviateKey))
 	if err != nil {
 		logrus.Errorf("Error creating weaviate client: %v", err)
@@ -52,10 +61,10 @@ func DirayCreate(data string) (object *data.ObjectWrapper, err error) {
 			return object, fmt.Errorf("error parsing request body: %v", err)
 		}
 
-		object, err = wc.AddNewRecord(types.DiaryClassName, map[string]string{
+		object, err = wc.AddNewRecord(types.DiaryClassName, map[string]interface{}{
 			"user":    dcm.User,
 			"content": dcm.Body,
-			"date":    dcm.Date,
+			"date":    dcm.DateSave,
 		})
 		if err != nil {
 			logrus.Errorf("Error creating weaviate record: %v", err)
