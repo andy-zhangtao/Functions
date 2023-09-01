@@ -79,7 +79,8 @@ type DirayCreateResponse struct {
 type DirayQueryModel struct {
 	Version string   `json:"version"`
 	User    string   `json:"user"`
-	Date    string   `json:"date,omitempty"`
+	Start   string   `json:"start,omitempty"`
+	End     string   `json:"end,omitempty"`
 	Tags    []string `json:"tags,omitempty"`
 	Keys    []string `json:"keys,omitempty"`
 }
