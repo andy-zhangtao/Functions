@@ -83,3 +83,10 @@ type DirayQueryModel struct {
 	Tags    []string `json:"tags,omitempty"`
 	Keys    []string `json:"keys,omitempty"`
 }
+
+type DirayQueryResponse struct {
+	Version string   `json:"version"`
+	Status  string   `json:"status"`
+	Code    int      `json:"code"`
+	Records []string `json:"records"`
+}
