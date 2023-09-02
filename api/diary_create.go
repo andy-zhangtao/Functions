@@ -153,15 +153,19 @@ func commonResponse(w http.ResponseWriter, code int, data types.DirayCreateRespo
 	json.NewEncoder(w).Encode(data)
 }
 
-func createWeaviateRecord(dcm types.DirayCreateModel) error {
-	return nil
-}
+// func createWeaviateRecord(dcm types.DirayCreateModel) error {
+// 	return nil
+// }
 
 func createMongoRecord(dcm types.DirayCreateModel) error {
 	flogs.Infof("createMongoRecord: %v", dcm)
-	uri := os.Getenv(types.EnvMongoHost)
+	uri := os.Getenv(types.EnvMONGOHOST)
 	db := os.Getenv(types.EnvMONGODB)
 	collection := os.Getenv(types.EnvMONGOCOLLECTION)
+	for _, k := range os.Environ() {
+		flogs.Infof("env: %s", k)
+	}
+
 	flogs.Infof("uri: %s db: %s collection: %s", uri, db, collection)
 	cli, err := fmongo.NewMongoCli(uri, db, collection)
 	if err != nil {
