@@ -8,6 +8,8 @@ import (
 	"os"
 	"time"
 
+	fmongo "github.com/andy-zhangtao/Functions/service/f_mongo"
+	"github.com/andy-zhangtao/Functions/tools/flogs"
 	"github.com/andy-zhangtao/Functions/types"
 	"github.com/sirupsen/logrus"
 	"github.com/weaviate/weaviate-go-client/v4/weaviate/data"
@@ -19,13 +21,13 @@ import (
 // @Tags diary
 // @Accept  json
 // @Produce  json
-func DirayCreate(data string) (object *data.ObjectWrapper, err error) {
+func DirayCreate(data string) (dcm types.DirayCreateModel, object *data.ObjectWrapper, err error) {
 
-	var dcm types.DirayCreateModel
+	// var dcm types.DirayCreateModel
 	err = json.Unmarshal([]byte(data), &dcm)
 	if err != nil {
 		logrus.Errorf("Error parsing request body: %v", err)
-		return object, err
+		return dcm, object, err
 	}
 
 	if dcm.Version == "" {
@@ -42,7 +44,7 @@ func DirayCreate(data string) (object *data.ObjectWrapper, err error) {
 	t, err := time.Parse("2006-01-02", dcm.Date)
 	if err != nil {
 		logrus.Errorf("Error parsing request body: %v", err)
-		return object, fmt.Errorf("error parsing request body: %v", err)
+		return dcm, object, fmt.Errorf("error parsing request body: %v", err)
 	}
 
 	dcm.DateSave = t
@@ -50,7 +52,7 @@ func DirayCreate(data string) (object *data.ObjectWrapper, err error) {
 	wc, err := types.NewWeaviateClient(os.Getenv(types.EnvWeaviateHost), os.Getenv(types.EnvWeaviateSchema), os.Getenv(types.EnvWewaviateKey))
 	if err != nil {
 		logrus.Errorf("Error creating weaviate client: %v", err)
-		return object, fmt.Errorf("error creating weaviate client: %v", err)
+		return dcm, object, fmt.Errorf("error creating weaviate client: %v", err)
 	}
 
 	switch dcm.Version {
@@ -58,7 +60,7 @@ func DirayCreate(data string) (object *data.ObjectWrapper, err error) {
 		err = checkV1(dcm)
 		if err != nil {
 			logrus.Errorf("Error parsing request body: %v", err)
-			return object, fmt.Errorf("error parsing request body: %v", err)
+			return dcm, object, fmt.Errorf("error parsing request body: %v", err)
 		}
 
 		object, err = wc.AddNewRecord(types.DiaryClassName, map[string]interface{}{
@@ -68,16 +70,19 @@ func DirayCreate(data string) (object *data.ObjectWrapper, err error) {
 		})
 		if err != nil {
 			logrus.Errorf("Error creating weaviate record: %v", err)
-			return object, fmt.Errorf("error creating weaviate record: %v", err)
+			return dcm, object, fmt.Errorf("error creating weaviate record: %v", err)
 		}
 
-		return object, nil
+		return dcm, object, nil
 	default:
 		logrus.Errorf("Not support version: %v", dcm.Version)
-		return object, fmt.Errorf("not support version: %v", dcm.Version)
+		return dcm, object, fmt.Errorf("not support version: %v", dcm.Version)
 	}
 }
 
+// DirayCreateHandler handle the diary create request
+// @Summary create a new diary
+// First save the diary to weaviate, then save the diary to mongo
 func DirayCreateHandler(w http.ResponseWriter, r *http.Request) {
 
 	// chech the http method , only allow POST method
@@ -88,78 +93,34 @@ func DirayCreateHandler(w http.ResponseWriter, r *http.Request) {
 
 	data, err := io.ReadAll(r.Body)
 	if err != nil {
-		logrus.Errorf("Error parsing request body: %v", err)
+		flogs.Errorf("Error parsing request body: %v", err)
 		errorResponse(w, err)
 		return
 	}
 
-	logrus.Infof("request body: %v", string(data))
+	flogs.Infof("request body: %v", string(data))
 
-	object, err := DirayCreate(string(data))
+	dcm, object, err := DirayCreate(string(data))
 	if err != nil {
-		logrus.Errorf("Error parsing request body: %v", err)
+		flogs.Errorf("Error parsing request body: %v", err)
 		errorResponse(w, err)
 		return
 	}
 
+	dcm.Mask = map[string]interface{}{
+		"weaviate": object.Object.ID.String(),
+	}
+
+	err = createMongoRecord(dcm)
+	if err != nil {
+		flogs.Errorf("Error creating mongo record: %v", err)
+		errorResponse(w, err)
+		return
+	}
 	commonResponse(w, http.StatusOK, types.DirayCreateResponse{
 		Code: http.StatusOK,
 		Msg:  object.Object.ID.String(),
 	})
-
-	// get the body of the request
-	// var dcm types.DirayCreateModel
-	// err := json.NewDecoder(r.Body).Decode(&dcm)
-	// if err != nil {
-	// 	logrus.Errorf("Error parsing request body: %v", err)
-	// 	errorResponse(w, err)
-	// 	return
-	// }
-
-	// if dcm.Version == "" {
-	// 	dcm.Version = types.RequestVersionDefault
-	// }
-
-	// // output all envoriment variables
-	// for _, e := range os.Environ() {
-	// 	logrus.Infof("%v", e)
-	// }
-
-	// wc, err := types.NewWeaviateClient(os.Getenv(types.EnvWeaviateHost), os.Getenv(types.EnvWeaviateSchema), os.Getenv(types.EnvWewaviateKey))
-	// if err != nil {
-	// 	logrus.Errorf("Error creating weaviate client: %v", err)
-	// 	errorResponse(w, err)
-	// 	return
-	// }
-
-	// switch dcm.Version {
-	// case types.RequestVersionV1:
-	// 	err = checkV1(dcm)
-	// 	if err != nil {
-	// 		logrus.Errorf("Error parsing request body: %v", err)
-	// 		errorResponse(w, err)
-	// 		return
-	// 	}
-
-	// 	err = wc.AddNewRecord(types.DiaryClassName, map[string]string{
-	// 		"user":    dcm.User,
-	// 		"content": dcm.Body,
-	// 	})
-	// 	if err != nil {
-	// 		logrus.Errorf("Error creating weaviate record: %v", err)
-	// 		errorResponse(w, err)
-	// 		return
-	// 	}
-
-	// 	commonResponse(w, http.StatusOK, types.DirayCreateResponse{
-	// 		Code: http.StatusOK,
-	// 	})
-	// default:
-	// 	logrus.Errorf("Error parsing request body: %v", err)
-	// 	errorResponse(w, err)
-	// 	return
-	// }
-
 }
 
 // checkV1 check the request body for v1
@@ -194,4 +155,18 @@ func commonResponse(w http.ResponseWriter, code int, data types.DirayCreateRespo
 
 func createWeaviateRecord(dcm types.DirayCreateModel) error {
 	return nil
+}
+
+func createMongoRecord(dcm types.DirayCreateModel) error {
+	flogs.Infof("createMongoRecord: %v", dcm)
+	uri := os.Getenv(types.EnvMongoHost)
+	db := os.Getenv(types.EnvMONGODB)
+	collection := os.Getenv(types.EnvMONGOCOLLECTION)
+	flogs.Infof("uri: %s db: %s collection: %s", uri, db, collection)
+	cli, err := fmongo.NewMongoCli(uri, db, collection)
+	if err != nil {
+		return fmt.Errorf("create mongo client error: %w", err)
+	}
+
+	return cli.SaveDataToMongo(dcm, map[string]interface{}{})
 }
