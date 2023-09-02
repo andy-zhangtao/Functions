@@ -162,9 +162,6 @@ func createMongoRecord(dcm types.DirayCreateModel) error {
 	uri := os.Getenv(types.EnvMONGOHOST)
 	db := os.Getenv(types.EnvMONGODB)
 	collection := os.Getenv(types.EnvMONGOCOLLECTION)
-	for _, k := range os.Environ() {
-		flogs.Infof("env: %s", k)
-	}
 
 	flogs.Infof("uri: %s db: %s collection: %s", uri, db, collection)
 	cli, err := fmongo.NewMongoCli(uri, db, collection)

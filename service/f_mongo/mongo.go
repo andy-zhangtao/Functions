@@ -44,7 +44,7 @@ func NewMongoCli(uri, db, collection string) (*MongoCli, error) {
 func (mc *MongoCli) SaveDataToMongo(dcm types.DirayCreateModel, mask map[string]interface{}) error {
 	_bData := bson.M{
 		"use":     dcm.User,
-		"date":    dcm.DateSave,
+		"date":    dcm.DateSave.Unix(),
 		"content": dcm.Body,
 	}
 
