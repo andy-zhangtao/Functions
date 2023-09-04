@@ -76,7 +76,7 @@ func (mc *MongoCli) QueryData(query types.DirayQueryModel) (results []types.Dira
 			return nil, fmt.Errorf("parse start time error: %w", err)
 		}
 		_bData["date"] = bson.M{
-			"$gte": _start,
+			"$gte": _start.Unix(),
 		}
 	}
 	if query.Start == "" && query.End != "" {
@@ -85,7 +85,7 @@ func (mc *MongoCli) QueryData(query types.DirayQueryModel) (results []types.Dira
 			return nil, fmt.Errorf("parse end time error: %w", err)
 		}
 		_bData["date"] = bson.M{
-			"$lte": _end,
+			"$lte": _end.Unix(),
 		}
 	}
 	if query.Start != "" && query.End != "" {
@@ -98,8 +98,8 @@ func (mc *MongoCli) QueryData(query types.DirayQueryModel) (results []types.Dira
 			return nil, fmt.Errorf("parse end time error: %w", err)
 		}
 		_bData["date"] = bson.M{
-			"$gte": _start,
-			"$lte": _end,
+			"$gte": _start.Unix(),
+			"$lte": _end.Unix(),
 		}
 	}
 
