@@ -66,7 +66,7 @@ func DirayCreate(data string) (dcm types.DirayCreateModel, object *data.ObjectWr
 		object, err = wc.AddNewRecord(types.DiaryClassName, map[string]interface{}{
 			"user":    dcm.User,
 			"content": dcm.Body,
-			"date":    dcm.DateSave,
+			"date":    dcm.DateSave.Unix(),
 		})
 		if err != nil {
 			logrus.Errorf("Error creating weaviate record: %v", err)
