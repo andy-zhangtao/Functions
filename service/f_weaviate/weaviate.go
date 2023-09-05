@@ -68,7 +68,7 @@ func (wc *WeaviateClient) GetRecords(class string, query types.DirayQueryModel) 
 		startWherefilter := filters.Where()
 		start, _ := strconv.ParseInt(query.Start, 10, 64)
 
-		startWherefilter.WithPath([]string{"date"}).WithOperator(filters.GreaterThan).WithValueInt(start)
+		startWherefilter.WithPath([]string{"date"}).WithOperator(filters.GreaterThanEqual).WithValueInt(start)
 		operands = append(operands, startWherefilter)
 	}
 
@@ -76,7 +76,7 @@ func (wc *WeaviateClient) GetRecords(class string, query types.DirayQueryModel) 
 		endWherefilter := filters.Where()
 		end, _ := strconv.ParseInt(query.End, 10, 64)
 
-		endWherefilter.WithPath([]string{"date"}).WithOperator(filters.LessThan).WithValueInt(end)
+		endWherefilter.WithPath([]string{"date"}).WithOperator(filters.LessThanEqual).WithValueInt(end)
 		operands = append(operands, endWherefilter)
 	}
 
