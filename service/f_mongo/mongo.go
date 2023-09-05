@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	fformat "github.com/andy-zhangtao/Functions/service/f_format"
@@ -143,7 +144,7 @@ func (mc *MongoCli) FormatAction(fm fformat.FormatModel) error {
 func (mc *MongoCli) saveFormatToMongo(fm fformat.FormatModel) error {
 	_bData := bson.M{
 		"user":   fm.User,
-		"tags":   fm.Tags,
+		"tags":   strings.Split(fm.Tags, ","),
 		"format": fm.Format,
 	}
 
