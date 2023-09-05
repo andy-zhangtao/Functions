@@ -160,6 +160,8 @@ func (mc *MongoCli) QueryFormat(query *fformat.FormatModel) (err error) {
 	_bData := bson.M{}
 
 	_bData["user"] = query.User
+	_bData["tags"] = strings.Split(query.Tags, ",")
+
 	flogs.Infof("QueryData _bData: %+v", _bData)
 	cur, err := collection.Find(context.Background(), _bData)
 	if err != nil {
