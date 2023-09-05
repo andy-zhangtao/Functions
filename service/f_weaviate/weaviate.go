@@ -89,8 +89,10 @@ func (wc *WeaviateClient) GetRecords(class string, query types.DirayQueryModel) 
 		},
 	}
 
+	ignoreDistance := true
 	filterCondition := wc.client.GraphQL().Get().WithClassName(class).WithWhere(where).WithFields(content, _additional)
 	if len(query.Keys) > 0 {
+		ignoreDistance = false
 		text := graphql.NearTextArgumentBuilder{}
 		text.WithConcepts(query.Keys)
 		filterCondition.WithNearText(&text)
@@ -104,7 +106,7 @@ func (wc *WeaviateClient) GetRecords(class string, query types.DirayQueryModel) 
 	var contentData []string
 	for _, item := range response.Data {
 		// logrus.Infof("Get record [%s] with id [%+v]", name, item)
-		_content, err := wc.parser(class, item)
+		_content, err := wc.parser(class, item, ignoreDistance)
 		if err != nil {
 			logrus.Errorf("could not parse object: %v", err)
 			continue
@@ -118,7 +120,7 @@ func (wc *WeaviateClient) GetRecords(class string, query types.DirayQueryModel) 
 	}, nil
 }
 
-func (wc *WeaviateClient) parser(class string, object models.JSONObject) (result []string, err error) {
+func (wc *WeaviateClient) parser(class string, object models.JSONObject, ignoreDistance bool) (result []string, err error) {
 	m, ok := object.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("could not parse object")
@@ -138,24 +140,38 @@ func (wc *WeaviateClient) parser(class string, object models.JSONObject) (result
 					return nil, fmt.Errorf("could not parse object")
 				}
 
-				// get distance
-				if _additional, ok := m["_additional"].(map[string]interface{}); ok {
-					if distance, ok := _additional["distance"].(float64); ok {
-						// logrus.Infof("distance: %f", distance)
-						if distance <= 0.25 {
-							for key, val := range m {
-								if key == "content" {
-									// logrus.Infof("key: %s, val: %s", key, reflect.TypeOf(val))
-									v, ok := val.(string)
-									if !ok {
-										return nil, fmt.Errorf("could not parse object")
+				if !ignoreDistance {
+					for key, val := range m {
+						if key == "content" {
+							// logrus.Infof("key: %s, val: %s", key, reflect.TypeOf(val))
+							v, ok := val.(string)
+							if !ok {
+								return nil, fmt.Errorf("could not parse object")
+							}
+							result = append(result, v)
+						}
+					}
+				} else {
+					// get distance if not ignore
+					if _additional, ok := m["_additional"].(map[string]interface{}); ok {
+						if distance, ok := _additional["distance"].(float64); ok {
+							// logrus.Infof("distance: %f", distance)
+							if distance <= 0.25 {
+								for key, val := range m {
+									if key == "content" {
+										// logrus.Infof("key: %s, val: %s", key, reflect.TypeOf(val))
+										v, ok := val.(string)
+										if !ok {
+											return nil, fmt.Errorf("could not parse object")
+										}
+										result = append(result, v)
 									}
-									result = append(result, v)
 								}
 							}
 						}
 					}
 				}
+
 			}
 		}
 	}
