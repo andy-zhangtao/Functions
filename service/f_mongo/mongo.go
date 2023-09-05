@@ -69,7 +69,7 @@ func (mc *MongoCli) QueryData(query types.DirayQueryModel) (results []types.Dira
 	_bData := bson.M{}
 
 	if query.User != "" {
-		_bData["use"] = query.User
+		_bData["user"] = query.User
 	}
 
 	if query.Start != "" && query.End == "" {
@@ -132,10 +132,12 @@ func (mc *MongoCli) QueryData(query types.DirayQueryModel) (results []types.Dira
 	return results, nil
 }
 
-func (mc *MongoCli) FormatAction(fm fformat.FormatModel) error {
+func (mc *MongoCli) FormatAction(fm *fformat.FormatModel) error {
 	switch fm.Action {
 	case types.AddAction:
-		return mc.saveFormatToMongo(fm)
+		return mc.saveFormatToMongo(*fm)
+	case types.QueryAction:
+		return mc.QueryFormat(fm)
 	}
 
 	return nil
@@ -151,4 +153,34 @@ func (mc *MongoCli) saveFormatToMongo(fm fformat.FormatModel) error {
 	collection := mc.cli.Database(mc.db).Collection(mc.collection)
 	_, err := collection.InsertOne(context.TODO(), _bData)
 	return err
+}
+
+func (mc *MongoCli) QueryFormat(query *fformat.FormatModel) (err error) {
+	collection := mc.cli.Database(mc.db).Collection(mc.collection)
+	_bData := bson.M{}
+
+	_bData["user"] = query.User
+	flogs.Infof("QueryData _bData: %+v", _bData)
+	cur, err := collection.Find(context.Background(), _bData)
+	if err != nil {
+		return fmt.Errorf("query mongo error: %w", err)
+	}
+
+	found := false
+	for cur.Next(context.Background()) {
+		if found {
+			break
+		}
+		var episode bson.M
+		err := cur.Decode(&episode)
+		if err != nil {
+			return fmt.Errorf("query mongo error: %w", err)
+		}
+
+		query.Format = episode["format"].(string)
+		found = true
+
+	}
+
+	return nil
 }
