@@ -1,14 +1,7 @@
 package types
 
 import (
-	"context"
-	"fmt"
 	"time"
-
-	"github.com/sirupsen/logrus"
-	"github.com/weaviate/weaviate-go-client/v4/weaviate"
-	"github.com/weaviate/weaviate-go-client/v4/weaviate/auth"
-	"github.com/weaviate/weaviate-go-client/v4/weaviate/data"
 )
 
 const (
@@ -25,42 +18,6 @@ const (
 const (
 	DiaryClassName = "Diary"
 )
-
-type WeaviateClient struct {
-	client *weaviate.Client
-}
-
-func NewWeaviateClient(host, schema, key string) (*WeaviateClient, error) {
-	cfg := weaviate.Config{
-		Host:       host,
-		Scheme:     schema,
-		AuthConfig: auth.ApiKey{Value: key},
-	}
-	client, err := weaviate.NewClient(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("could not create weaviate client: %v", err)
-	}
-
-	return &WeaviateClient{
-		client: client,
-	}, nil
-}
-
-func (wc *WeaviateClient) AddNewRecord(class string, properties map[string]interface{}) (*data.ObjectWrapper, error) {
-	data := make(map[string]interface{})
-
-	for key, val := range properties {
-		data[key] = val
-	}
-
-	created, err := wc.client.Data().Creator().WithClassName(class).WithProperties(data).Do(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("could not create record: %v", err)
-	}
-
-	logrus.Infof("Created record with id [%+v]", created)
-	return created, nil
-}
 
 type DirayCreateModel struct {
 	User     string      `json:"user"`

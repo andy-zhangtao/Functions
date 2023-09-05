@@ -9,6 +9,7 @@ import (
 	"time"
 
 	fmongo "github.com/andy-zhangtao/Functions/service/f_mongo"
+	fweaviate "github.com/andy-zhangtao/Functions/service/f_weaviate"
 	"github.com/andy-zhangtao/Functions/tools/flogs"
 	"github.com/andy-zhangtao/Functions/types"
 	"github.com/sirupsen/logrus"
@@ -49,7 +50,7 @@ func DirayCreate(data string) (dcm types.DirayCreateModel, object *data.ObjectWr
 
 	dcm.DateSave = t
 
-	wc, err := types.NewWeaviateClient(os.Getenv(types.EnvWeaviateHost), os.Getenv(types.EnvWeaviateSchema), os.Getenv(types.EnvWewaviateKey))
+	wc, err := fweaviate.NewWeaviateClient(os.Getenv(types.EnvWeaviateHost), os.Getenv(types.EnvWeaviateSchema), os.Getenv(types.EnvWewaviateKey))
 	if err != nil {
 		logrus.Errorf("Error creating weaviate client: %v", err)
 		return dcm, object, fmt.Errorf("error creating weaviate client: %v", err)
