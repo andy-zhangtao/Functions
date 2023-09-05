@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	fformat "github.com/andy-zhangtao/Functions/service/f_format"
 	"github.com/andy-zhangtao/Functions/tools/flogs"
 	"github.com/andy-zhangtao/Functions/types"
 	"go.mongodb.org/mongo-driver/bson"
@@ -43,7 +44,7 @@ func NewMongoCli(uri, db, collection string) (*MongoCli, error) {
 // mask: map[string]interface{}{"key": "value"}
 func (mc *MongoCli) SaveDataToMongo(dcm types.DirayCreateModel, mask map[string]interface{}) error {
 	_bData := bson.M{
-		"use":     dcm.User,
+		"user":    dcm.User,
 		"date":    dcm.DateSave.Unix(),
 		"content": dcm.Body,
 	}
@@ -128,4 +129,25 @@ func (mc *MongoCli) QueryData(query types.DirayQueryModel) (results []types.Dira
 	}
 
 	return results, nil
+}
+
+func (mc *MongoCli) FormatAction(fm fformat.FormatModel) error {
+	switch fm.Action {
+	case types.AddAction:
+		return mc.saveFormatToMongo(fm)
+	}
+
+	return nil
+}
+
+func (mc *MongoCli) saveFormatToMongo(fm fformat.FormatModel) error {
+	_bData := bson.M{
+		"user":   fm.User,
+		"tags":   fm.Tags,
+		"format": fm.Format,
+	}
+
+	collection := mc.cli.Database(mc.db).Collection(mc.collection)
+	_, err := collection.InsertOne(context.TODO(), _bData)
+	return err
 }
