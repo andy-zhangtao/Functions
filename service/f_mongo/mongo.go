@@ -181,6 +181,7 @@ func (mc *MongoCli) QueryFormat(query *fformat.FormatModel) (err error) {
 		}
 
 		query.Format = episode["format"].(string)
+		query.Example = episode["example"].(string)
 		found = true
 
 	}
