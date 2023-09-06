@@ -145,9 +145,10 @@ func (mc *MongoCli) FormatAction(fm *fformat.FormatModel) error {
 
 func (mc *MongoCli) saveFormatToMongo(fm fformat.FormatModel) error {
 	_bData := bson.M{
-		"user":   fm.User,
-		"tags":   strings.Split(fm.Tags, ","),
-		"format": fm.Format,
+		"user":    fm.User,
+		"tags":    strings.Split(fm.Tags, ","),
+		"format":  fm.Format,
+		"example": fm.Example,
 	}
 
 	collection := mc.cli.Database(mc.db).Collection(mc.collection)
