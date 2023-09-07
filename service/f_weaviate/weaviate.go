@@ -143,7 +143,7 @@ func (wc *WeaviateClient) parser(class string, object models.JSONObject, ignoreD
 					return nil, fmt.Errorf("could not parse object")
 				}
 
-				if !ignoreDistance {
+				if ignoreDistance {
 					content := ""
 					date := ""
 
