@@ -152,20 +152,20 @@ func (wc *WeaviateClient) parser(class string, object models.JSONObject, ignoreD
 						case "content":
 							v, ok := val.(string)
 							if !ok {
-								return nil, fmt.Errorf("could not parse object %+v", key)
+								return nil, fmt.Errorf("could not parse object %+v", val)
 							}
 							content = v
 						case "date":
-							v, ok := val.(int64)
+							v, ok := val.(float64)
 							if !ok {
-								return nil, fmt.Errorf("could not parse object %+v", key)
+								return nil, fmt.Errorf("could not parse object %+v", val)
 							}
-							date = time.Unix(v, 0).Format("2006-01-02")
+							date = time.Unix(int64(v), 0).Format("2006-01-02")
 						}
 					}
 
 					if content != "" && date != "" {
-						result = append(result, fmt.Sprintf("%s记录的内容是, %s", date, content))
+						result = append(result, fmt.Sprintf("%s记录的内容是  \\%s", date, content))
 					}
 
 				} else {
@@ -181,21 +181,19 @@ func (wc *WeaviateClient) parser(class string, object models.JSONObject, ignoreD
 									case "content":
 										v, ok := val.(string)
 										if !ok {
-											return nil, fmt.Errorf("could not parse object %+v", key)
+											return nil, fmt.Errorf("could not parse object %+v", val)
 										}
 										content = v
 									case "date":
-										v, ok := val.(int64)
+										v, ok := val.(float64)
 										if !ok {
-											return nil, fmt.Errorf("could not parse object %+v", key)
+											return nil, fmt.Errorf("could not parse object %+v", val)
 										}
-
-										// parse v to date(yyyy-mm-dd)
-										date = time.Unix(v, 0).Format("2006-01-02")
+										date = time.Unix(int64(v), 0).Format("2006-01-02")
 									}
 								}
 								if content != "" && date != "" {
-									result = append(result, fmt.Sprintf("%s记录的内容是, %s", date, content))
+									result = append(result, fmt.Sprintf("%s记录的内容是  \\%s", date, content))
 								}
 							}
 						}
