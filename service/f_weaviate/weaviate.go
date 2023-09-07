@@ -165,7 +165,7 @@ func (wc *WeaviateClient) parser(class string, object models.JSONObject, ignoreD
 					}
 
 					if content != "" && date != "" {
-						result = append(result, fmt.Sprintf("%s记录的内容是  \\%s", date, content))
+						result = append(result, fmt.Sprintf("%s记录的内容是  \n%s", date, content))
 					}
 
 				} else {
@@ -193,7 +193,7 @@ func (wc *WeaviateClient) parser(class string, object models.JSONObject, ignoreD
 									}
 								}
 								if content != "" && date != "" {
-									result = append(result, fmt.Sprintf("%s记录的内容是  \\%s", date, content))
+									result = append(result, fmt.Sprintf("%s记录的内容是  \n%s", date, content))
 								}
 							}
 						}
