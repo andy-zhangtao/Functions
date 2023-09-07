@@ -144,16 +144,30 @@ func (wc *WeaviateClient) parser(class string, object models.JSONObject, ignoreD
 				}
 
 				if !ignoreDistance {
+					content := ""
+					date := ""
+
 					for key, val := range m {
-						if key == "content" {
-							// logrus.Infof("key: %s, val: %s", key, reflect.TypeOf(val))
+						switch key {
+						case "content":
 							v, ok := val.(string)
 							if !ok {
-								return nil, fmt.Errorf("could not parse object")
+								return nil, fmt.Errorf("could not parse object %+v", key)
 							}
-							result = append(result, v)
+							content = v
+						case "date":
+							v, ok := val.(int64)
+							if !ok {
+								return nil, fmt.Errorf("could not parse object %+v", key)
+							}
+							date = time.Unix(v, 0).Format("2006-01-02")
 						}
 					}
+
+					if content != "" && date != "" {
+						result = append(result, fmt.Sprintf("%s记录的内容是, %s", date, content))
+					}
+
 				} else {
 					// get distance if not ignore
 					if _additional, ok := m["_additional"].(map[string]interface{}); ok {
