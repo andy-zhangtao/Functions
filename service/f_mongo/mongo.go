@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
+	fformat "github.com/andy-zhangtao/Functions/service/f_format"
 	"github.com/andy-zhangtao/Functions/tools/flogs"
 	"github.com/andy-zhangtao/Functions/types"
 	"go.mongodb.org/mongo-driver/bson"
@@ -43,7 +45,7 @@ func NewMongoCli(uri, db, collection string) (*MongoCli, error) {
 // mask: map[string]interface{}{"key": "value"}
 func (mc *MongoCli) SaveDataToMongo(dcm types.DirayCreateModel, mask map[string]interface{}) error {
 	_bData := bson.M{
-		"use":     dcm.User,
+		"user":    dcm.User,
 		"date":    dcm.DateSave.Unix(),
 		"content": dcm.Body,
 	}
@@ -67,7 +69,7 @@ func (mc *MongoCli) QueryData(query types.DirayQueryModel) (results []types.Dira
 	_bData := bson.M{}
 
 	if query.User != "" {
-		_bData["use"] = query.User
+		_bData["user"] = query.User
 	}
 
 	if query.Start != "" && query.End == "" {
@@ -128,4 +130,61 @@ func (mc *MongoCli) QueryData(query types.DirayQueryModel) (results []types.Dira
 	}
 
 	return results, nil
+}
+
+func (mc *MongoCli) FormatAction(fm *fformat.FormatModel) error {
+	switch fm.Action {
+	case types.AddAction:
+		return mc.saveFormatToMongo(*fm)
+	case types.QueryAction:
+		return mc.QueryFormat(fm)
+	}
+
+	return nil
+}
+
+func (mc *MongoCli) saveFormatToMongo(fm fformat.FormatModel) error {
+	_bData := bson.M{
+		"user":    fm.User,
+		"tags":    strings.Split(fm.Tags, ","),
+		"format":  fm.Format,
+		"example": fm.Example,
+	}
+
+	collection := mc.cli.Database(mc.db).Collection(mc.collection)
+	_, err := collection.InsertOne(context.TODO(), _bData)
+	return err
+}
+
+func (mc *MongoCli) QueryFormat(query *fformat.FormatModel) (err error) {
+	collection := mc.cli.Database(mc.db).Collection(mc.collection)
+	_bData := bson.M{}
+
+	_bData["user"] = query.User
+	_bData["tags"] = strings.Split(query.Tags, ",")
+
+	flogs.Infof("QueryData _bData: %+v", _bData)
+	cur, err := collection.Find(context.Background(), _bData)
+	if err != nil {
+		return fmt.Errorf("query mongo error: %w", err)
+	}
+
+	found := false
+	for cur.Next(context.Background()) {
+		if found {
+			break
+		}
+		var episode bson.M
+		err := cur.Decode(&episode)
+		if err != nil {
+			return fmt.Errorf("query mongo error: %w", err)
+		}
+
+		query.Format = episode["format"].(string)
+		query.Example = episode["example"].(string)
+		found = true
+
+	}
+
+	return nil
 }

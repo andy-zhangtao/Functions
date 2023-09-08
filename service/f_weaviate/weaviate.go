@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/andy-zhangtao/Functions/types"
 	"github.com/sirupsen/logrus"
@@ -83,6 +84,8 @@ func (wc *WeaviateClient) GetRecords(class string, query types.DirayQueryModel) 
 	where := filters.Where().WithOperator(filters.And).WithOperands(operands)
 
 	content := graphql.Field{Name: "content"}
+	date := graphql.Field{Name: "date"}
+
 	_additional := graphql.Field{
 		Name: "_additional", Fields: []graphql.Field{
 			{Name: "distance"}, // always supported
@@ -90,7 +93,7 @@ func (wc *WeaviateClient) GetRecords(class string, query types.DirayQueryModel) 
 	}
 
 	ignoreDistance := true
-	filterCondition := wc.client.GraphQL().Get().WithClassName(class).WithWhere(where).WithFields(content, _additional)
+	filterCondition := wc.client.GraphQL().Get().WithClassName(class).WithWhere(where).WithFields(content, date, _additional)
 	if len(query.Keys) > 0 {
 		ignoreDistance = false
 		text := graphql.NearTextArgumentBuilder{}
@@ -140,32 +143,57 @@ func (wc *WeaviateClient) parser(class string, object models.JSONObject, ignoreD
 					return nil, fmt.Errorf("could not parse object")
 				}
 
-				if !ignoreDistance {
+				if ignoreDistance {
+					content := ""
+					date := ""
+
 					for key, val := range m {
-						if key == "content" {
-							// logrus.Infof("key: %s, val: %s", key, reflect.TypeOf(val))
+						switch key {
+						case "content":
 							v, ok := val.(string)
 							if !ok {
-								return nil, fmt.Errorf("could not parse object")
+								return nil, fmt.Errorf("could not parse object %+v", val)
 							}
-							result = append(result, v)
+							content = v
+						case "date":
+							v, ok := val.(float64)
+							if !ok {
+								return nil, fmt.Errorf("could not parse object %+v", val)
+							}
+							date = time.Unix(int64(v), 0).Format("2006-01-02")
 						}
 					}
+
+					if content != "" && date != "" {
+						result = append(result, fmt.Sprintf("%s记录的内容是  \n%s", date, content))
+					}
+
 				} else {
 					// get distance if not ignore
 					if _additional, ok := m["_additional"].(map[string]interface{}); ok {
 						if distance, ok := _additional["distance"].(float64); ok {
 							// logrus.Infof("distance: %f", distance)
 							if distance <= 0.25 {
+								content := ""
+								date := ""
 								for key, val := range m {
-									if key == "content" {
-										// logrus.Infof("key: %s, val: %s", key, reflect.TypeOf(val))
+									switch key {
+									case "content":
 										v, ok := val.(string)
 										if !ok {
-											return nil, fmt.Errorf("could not parse object")
+											return nil, fmt.Errorf("could not parse object %+v", val)
 										}
-										result = append(result, v)
+										content = v
+									case "date":
+										v, ok := val.(float64)
+										if !ok {
+											return nil, fmt.Errorf("could not parse object %+v", val)
+										}
+										date = time.Unix(int64(v), 0).Format("2006-01-02")
 									}
+								}
+								if content != "" && date != "" {
+									result = append(result, fmt.Sprintf("%s记录的内容是  \n%s", date, content))
 								}
 							}
 						}
