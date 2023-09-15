@@ -8,7 +8,6 @@ require (
 	github.com/weaviate/weaviate v1.19.13-0.20230706120536-85b5f0f4fa43
 	github.com/weaviate/weaviate-go-client/v4 v4.9.0
 	go.mongodb.org/mongo-driver v1.12.1
-	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22
 )
 
 require (
