@@ -3,7 +3,9 @@ module github.com/andy-zhangtao/Functions
 go 1.20
 
 require (
+	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.0
+	github.com/weaviate/weaviate v1.19.13-0.20230706120536-85b5f0f4fa43
 	github.com/weaviate/weaviate-go-client/v4 v4.9.0
 	go.mongodb.org/mongo-driver v1.12.1
 )
@@ -29,7 +31,6 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
-	github.com/weaviate/weaviate v1.19.13-0.20230706120536-85b5f0f4fa43 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
