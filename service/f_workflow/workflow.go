@@ -2,6 +2,7 @@ package fworkflow
 
 import (
 	"github.com/andy-zhangtao/Functions/driver"
+	traceid "github.com/andy-zhangtao/Functions/tools/trace_id"
 	"github.com/andy-zhangtao/Functions/types"
 	"github.com/andy-zhangtao/Functions/workflow"
 	"github.com/pkg/errors"
@@ -12,7 +13,7 @@ type WorkflowClient struct {
 }
 
 func NewWorkflowClient(wc driver.WeaviateClientConf, mc driver.MongoCliConf) (*WorkflowClient, error) {
-	wf, err := workflow.NewWorkFlow(wc, mc)
+	wf, err := workflow.NewWorkFlow(wc, mc, traceid.ID())
 	if err != nil {
 		return nil, errors.WithMessage(err, "new workflow error")
 	}
