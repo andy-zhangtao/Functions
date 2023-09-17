@@ -48,6 +48,7 @@ func (service *WorkFlowService) ExecuteWorkFlow(workflowID string) (*types.Resul
 		return nil, errors.New("Invalid action")
 	}
 
+	service.log("Executing workflow: %+v", workflow)
 	// Read steps by IDs
 	steps, err := service.Store.GetStepsByID(workflow.StepIDs)
 	if err != nil {

@@ -76,7 +76,7 @@ func NewMongoStore(uri, db, traceId string) *MongoStore {
 	// if err != nil {
 	// 	log.Fatal(err)
 	// }
-	flogs.Infof("NewMongoCli uri: %s", uri)
+	flogs.Infof("NewMongoCli uri: %s with traceId %s", uri, traceId)
 
 	clientOpts := options.Client().ApplyURI(uri)
 	client, err := mongo.Connect(context.TODO(), clientOpts)
@@ -91,8 +91,9 @@ func NewMongoStore(uri, db, traceId string) *MongoStore {
 	}
 
 	return &MongoStore{
-		Client: client,
-		db:     db,
+		Client:  client,
+		db:      db,
+		traceId: traceId,
 	}
 }
 
