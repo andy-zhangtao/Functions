@@ -12,6 +12,8 @@ import (
 
 	"github.com/andy-zhangtao/Functions/tools/flogs"
 	"github.com/andy-zhangtao/Functions/types"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -43,12 +45,25 @@ import (
 //
 // MongoStore is a struct that holds the MongoDB client
 type MongoStore struct {
-	Client *mongo.Client
-	db     string
+	Client  *mongo.Client
+	db      string
+	traceId string
+}
+
+func (store *MongoStore) log(format string, args ...interface{}) {
+	format = "[MongoStore]-[info]-[%s] " + format
+	args = append([]interface{}{store.traceId}, args...)
+	logrus.Infof(format, args...)
+}
+
+func (store *MongoStore) error(format string, args ...interface{}) {
+	format = "[MongoStore]-[info]-[%s] " + format
+	args = append([]interface{}{store.traceId}, args...)
+	logrus.Errorf(format, args...)
 }
 
 // NewMongoStore initializes a new MongoDB store
-func NewMongoStore(uri, db string) *MongoStore {
+func NewMongoStore(uri, db, traceId string) *MongoStore {
 	// client, err := mongo.NewClient(options.Client().ApplyURI(uri))
 	// if err != nil {
 	// 	log.Fatal(err)
@@ -83,6 +98,7 @@ func NewMongoStore(uri, db string) *MongoStore {
 
 // GetWorkFlowByID fetches a WorkFlow by its ID from MongoDB
 func (store *MongoStore) GetWorkFlowByID(id string) (*types.WorkFlow, error) {
+	store.log("get workflow with id: %s", id)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -91,7 +107,8 @@ func (store *MongoStore) GetWorkFlowByID(id string) (*types.WorkFlow, error) {
 
 	err := collection.FindOne(ctx, bson.M{"id": id}).Decode(&workflow)
 	if err != nil {
-		return nil, err
+		store.error("get workflow with id: %s error: %v", id, err)
+		return nil, errors.WithMessage(err, "get workflow error")
 	}
 
 	return &workflow, nil
@@ -99,6 +116,7 @@ func (store *MongoStore) GetWorkFlowByID(id string) (*types.WorkFlow, error) {
 
 // GetStepsByID fetches Steps by their IDs from MongoDB
 func (store *MongoStore) GetStepsByID(ids []string) ([]types.Step, error) {
+	store.log("get steps with ids: %v", ids)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -106,15 +124,18 @@ func (store *MongoStore) GetStepsByID(ids []string) ([]types.Step, error) {
 	var steps []types.Step
 
 	filter := bson.M{"id": bson.M{"$in": ids}}
+	store.log("filter: %v", filter)
 	cursor, err := collection.Find(ctx, filter)
 	if err != nil {
-		return nil, err
+		store.error("get steps with ids: %v error: %v", ids, err)
+		return nil, errors.WithMessage(err, "get steps error")
 	}
 
 	for cursor.Next(ctx) {
 		var step types.Step
 		if err := cursor.Decode(&step); err != nil {
-			return nil, err
+			store.error("get steps with ids: %v error: %v", ids, err)
+			return nil, errors.WithMessage(err, "decode steps error")
 		}
 		steps = append(steps, step)
 	}

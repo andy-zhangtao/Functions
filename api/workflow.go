@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os"
 
+	traceid "github.com/andy-zhangtao/Functions/tools/trace_id"
 	"github.com/andy-zhangtao/Functions/types"
 	"github.com/andy-zhangtao/Functions/workflow"
 )
@@ -81,16 +82,19 @@ import (
 // WorkFlowHandler handles the /v1/workflow route
 func WorkFlowHandler(w http.ResponseWriter, r *http.Request) {
 	// Initialize MongoDB store
+	traceId := traceid.ID()
+
 	mongoStore := workflow.NewMongoStore(
 		os.Getenv(types.EnvMONGOHOST),
 		os.Getenv(types.EnvMONGODB),
+		traceId,
 	)
 
 	// Initialize WorkFlowService
-	service := workflow.NewWorkFlowService(mongoStore)
+	service := workflow.NewWorkFlowService(mongoStore, traceId)
 
 	// Initialize APIHandler
-	apiHandler := workflow.NewAPIHandler(service)
+	apiHandler := workflow.NewAPIHandler(service, traceId)
 
 	// Handle the API request
 	apiHandler.HandleWorkFlowRequest(w, r)

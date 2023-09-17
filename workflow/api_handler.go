@@ -7,23 +7,38 @@ package workflow
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/sirupsen/logrus"
 )
 
 // APIHandler handles the API requests for workflows
 type APIHandler struct {
 	Service *WorkFlowService
+	traceId string
 }
 
 // NewAPIHandler initializes a new APIHandler
-func NewAPIHandler(service *WorkFlowService) *APIHandler {
-	return &APIHandler{Service: service}
+func NewAPIHandler(service *WorkFlowService, traceId string) *APIHandler {
+	return &APIHandler{Service: service, traceId: traceId}
+}
+
+func (handler *APIHandler) log(format string, args ...interface{}) {
+	format = "[APIHandler]-[info]-[%s] " + format
+	args = append([]interface{}{handler.traceId}, args...)
+	logrus.Infof(format, args...)
+}
+
+func (handler *APIHandler) error(format string, args ...interface{}) {
+	format = "[APIHandler]-[error]-[%s] " + format
+	args = append([]interface{}{handler.traceId}, args...)
+	logrus.Errorf(format, args...)
 }
 
 // HandleWorkFlowRequest handles the /v1/workflow API endpoint
 func (handler *APIHandler) HandleWorkFlowRequest(w http.ResponseWriter, r *http.Request) {
 	// For demonstration, we assume the workflow ID is passed as a query parameter
 	workflowID := r.URL.Query().Get("id")
-
+	handler.log("Executing workflow: %s", workflowID)
 	// Execute the workflow
 	result, err := handler.Service.ExecuteWorkFlow(workflowID)
 	if err != nil {
