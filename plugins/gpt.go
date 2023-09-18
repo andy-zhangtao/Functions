@@ -14,6 +14,7 @@ import (
 
 type GPT struct {
 	traceId string
+	plugin  types.Plugin
 	c       GPTConfig
 	wfc     *types.WorkflowContext
 }
@@ -27,7 +28,13 @@ type GPTConfig struct {
 	Temperature  float64 `json:"temperature"`
 }
 
-func NewGPTPlugin(traceId string, c GPTConfig, fc *types.WorkflowContext) *GPT {
+func NewGPTPlugin(c GPTConfig, fc *types.WorkflowContext) *GPT {
+	traceId := ""
+	_traceId := fc.Get(types.TraceID)
+	if _traceId != nil {
+		traceId = _traceId.(string)
+	}
+
 	return &GPT{
 		traceId: traceId,
 		c:       c,
@@ -49,20 +56,48 @@ func (p *GPT) error(format string, args ...interface{}) error {
 	return nil
 }
 
-func (p *GPT) Initialize() error {
-	p.log("GPT plugin initialized")
+func (p *GPT) Initialize(plugin types.Plugin) error {
+
+	p.log("GPT plugin initialized with [%+v]", plugin)
+	p.plugin = plugin
+
+	input, err := p.parseInput(plugin)
+	if err != nil {
+		return errors.WithMessage(err, "parse input error")
+	}
+
+	p.c.SystemPrompt = input.Prompt.System
+	p.c.Model = input.Model
+	p.c.MaxTokens = input.MaxTokens
+	p.c.Temperature = input.Temperature
+
+	p.log("GPT plugin initialized with [%+v]", p.c)
+
 	return nil
 }
 
-func (p *GPT) Execute(ctx *types.WorkflowContext) error {
+func (p *GPT) Execute(ctx *types.WorkflowContext, question string) error {
+	p.log("GPT plugin execute with question: %s", question)
+
+	response, err := p.do(question)
+	if err != nil {
+		p.error("do gpt error: %v", err)
+		return errors.WithMessage(err, "do gpt error")
+	}
+
+	p.log("GPT plugin execute with response: %+v", response)
+	// TODO parse function calling result
+	// If parse success ,then fill up the result with down plugin result
+	// key = "plugin_N_input"
 	return nil
 }
 
 func (p *GPT) Finalize() (*types.WorkflowContext, error) {
+	p.log("GPT plugin finalize")
 	return p.wfc, nil
 }
 
-func (p *GPT) messages() []types.OpenAIMessage {
+func (p *GPT) messages(question string) []types.OpenAIMessage {
 	return []types.OpenAIMessage{
 		{
 			Role:    "system",
@@ -70,21 +105,22 @@ func (p *GPT) messages() []types.OpenAIMessage {
 		},
 		{
 			Role:    "user",
-			Content: p.c.SKey,
+			Content: question,
 		},
 	}
 }
 
 func (p *GPT) functingCalling() ([]types.OpenAIFunction, error) {
+	// TODO get plugin via reference down plugins
 	return nil, nil
 }
 
-func (p *GPT) do() (res types.OpenAIResponse, err error) {
+func (p *GPT) do(question string) (res types.OpenAIResponse, err error) {
 	reqModel := types.OpenAIWithFunctionRequest{
 		Model:       p.c.Model,
 		MaxTokens:   p.c.MaxTokens,
 		Temperature: p.c.Temperature,
-		Messages:    p.messages(),
+		Messages:    p.messages(question),
 		// FunctionCall: &gi.functionName,
 	}
 
@@ -152,4 +188,22 @@ func (p *GPT) do() (res types.OpenAIResponse, err error) {
 	}
 
 	return accResponse, nil
+}
+
+// parseInput 解析输入
+// input 为json格式, 看起来应该是:
+// {"prompt":{"system":""},"max_tokens":1,"temperature":1.2,"model":""}
+func (p *GPT) parseInput(plugin types.Plugin) (input types.PluginGPTInput, err error) {
+	if plugin.Input.Type == "json" {
+		// 解析json
+		p.log("input value: %s", plugin.Input.Value)
+
+		err = json.Unmarshal([]byte(plugin.Input.Value.(string)), &input)
+		if err != nil {
+			p.error("parse input error: %v", err)
+			return input, errors.WithMessage(err, "parse input error")
+		}
+	}
+
+	return input, errors.New("invalid input type, now only support json format")
 }

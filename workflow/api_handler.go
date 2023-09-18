@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/andy-zhangtao/Functions/types"
 	"github.com/sirupsen/logrus"
 )
 
@@ -38,9 +39,19 @@ func (handler *APIHandler) error(format string, args ...interface{}) {
 func (handler *APIHandler) HandleWorkFlowRequest(w http.ResponseWriter, r *http.Request) {
 	// For demonstration, we assume the workflow ID is passed as a query parameter
 	workflowID := r.URL.Query().Get("id")
-	handler.log("Executing workflow: %s", workflowID)
+
+	var req types.WorkFlowRequest
+
+	// Deserialize the request from body
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	handler.log("Executing workflow: %s with %+v", workflowID, req)
 	// Execute the workflow
-	result, err := handler.Service.ExecuteWorkFlow(workflowID)
+	result, err := handler.Service.ExecuteWorkFlow(workflowID, req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

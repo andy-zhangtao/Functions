@@ -4,10 +4,10 @@ import "go.mongodb.org/mongo-driver/bson/primitive"
 
 // WorkFlow represents a workflow entity
 type WorkFlow struct {
-	ID      string   `json:"id" bson:"id"`
-	Name    string   `json:"name" bson:"name"`
-	Action  string   `json:"action" bson:"action"`
-	StepIDs []string `json:"step_ids" bson:"step_ids"`
+	ID      string `json:"id" bson:"id"`
+	Name    string `json:"name" bson:"name"`
+	Action  string `json:"action" bson:"action"`
+	StepIDs []int  `json:"step_ids" bson:"step_ids"`
 }
 
 // Step represents a step entity within a workflow
@@ -49,9 +49,10 @@ type FlowModel struct {
 }
 
 type WorkFlowRequest struct {
-	Action int    `json:"action"`
-	User   string `json:"user"`
-	Name   string `json:"name"`
+	Action   int    `json:"action"`
+	User     string `json:"user"`
+	Name     string `json:"name"`
+	Question string `json:"question"`
 }
 
 const (
@@ -70,4 +71,5 @@ type WorkFlowResponse struct {
 const (
 	MongoDBWorkFlow = "workflows"
 	MongoDBSteps    = "steps"
+	MongoDBPlugins  = "plugins"
 )

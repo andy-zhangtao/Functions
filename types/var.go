@@ -5,3 +5,7 @@ const (
 	QueryAction  = "2"
 	DeleteAction = "3"
 )
+
+const (
+	TraceID = "x-traceId"
+)
