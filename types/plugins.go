@@ -35,8 +35,13 @@ type Plugin struct {
 
 // PluginIO defines the Input/Output structure for a Plugin
 type PluginIO struct {
-	Type  string      `bson:"type" json:"type"`
-	Value interface{} `bson:"value" json:"value"`
+	Name  string     `bson:"name" json:"name"`
+	Value PluginType `bson:"value" json:"value"`
+}
+
+type PluginType struct {
+	Type        string `bson:"type" json:"type"`
+	Description string `bson:"description" json:"description"`
 }
 
 // PluginReference defines the reference structure for a Plugin

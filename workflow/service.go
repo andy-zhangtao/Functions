@@ -23,15 +23,19 @@ type WorkFlowService struct {
 func NewWorkFlowService(store *MongoStore, traceId string) *WorkFlowService {
 
 	wfs := &WorkFlowService{Store: store, traceId: traceId}
-
-	wfs.ctx = types.NewWorkFlowContext()
-
-	wfs.ctx.Set(types.TraceID, traceId)
+	wfs.initContext()
 
 	wfs.pluginMap = map[string]plugins.Plugin{
 		"gpt": plugins.NewGPTPlugin(plugins.GPTConfig{}, wfs.ctx),
 	}
 	return wfs
+}
+
+func (service *WorkFlowService) initContext() {
+	service.ctx = types.NewWorkFlowContext()
+
+	service.ctx.Set(types.TraceID, service.traceId)
+	service.ctx.Set(types.GetPluginWithID, service.Store.GetPluginByPluginKey)
 }
 
 func (service *WorkFlowService) log(format string, args ...interface{}) {

@@ -16,7 +16,10 @@ type GPT struct {
 	traceId string
 	plugin  types.Plugin
 	c       GPTConfig
-	wfc     *types.WorkflowContext
+
+	wfc *types.WorkflowContext
+
+	getPluginWithID func(id int) ([]types.Plugin, error)
 }
 
 type GPTConfig struct {
@@ -71,6 +74,13 @@ func (p *GPT) Initialize(plugin types.Plugin) error {
 	p.c.MaxTokens = input.MaxTokens
 	p.c.Temperature = input.Temperature
 
+	getPluginWithID := p.wfc.Get(types.GetPluginWithID)
+	if getPluginWithID == nil {
+		return errors.New("get plugin with id error")
+	}
+
+	p.getPluginWithID = getPluginWithID.(func(id int) ([]types.Plugin, error))
+
 	p.log("GPT plugin initialized with [%+v]", p.c)
 
 	return nil
@@ -112,8 +122,84 @@ func (p *GPT) messages(question string) []types.OpenAIMessage {
 
 func (p *GPT) functingCalling() ([]types.OpenAIFunction, error) {
 	// TODO get plugin via reference down plugins
+	// 一般来说GPT模块应该是工作流第一个模块，所以这里不需要获取up plugin
+	if len(p.plugin.Reference.Down) == 0 {
+		return nil, nil
+	}
+
+	// 如果存在down plugin，那么就获取down plugin
+	// 目前仅支持一个down plugin
+	downPluginKey := p.plugin.Reference.Down[0]
+	downPlugins, err := p.getPluginWithID(downPluginKey)
+	if err != nil {
+		return nil, errors.WithMessage(err, "getPluginWithID error")
+	}
+
+	if len(downPlugins) == 0 {
+		return nil, errors.Errorf("not find plugin with %d", downPluginKey)
+	}
+
 	return nil, nil
 }
+
+// generateOpenAIFunctionViaPlugin 通过plugin生成OpenAIFunction
+// 通过Plugin的name和describe填充OpenAIFunction数据，重点是对Plugin Input 的提取和峰值
+// plugin的示例如下:
+// {}
+// func (p *GPT) generateOpenAIFunctionViaPlugin(plugin types.Plugin) (of types.OpenAIFunction, err error) {
+// 	// Initialize OpenAIFunction
+// 	of = types.OpenAIFunction{
+// 		Name:        plugin.Name,
+// 		Description: plugin.Descript,
+// 	}
+
+// 	// Check if Plugin Input is a map
+// 	// TODO: Check if Plugin Input is a valid map
+// 	inputMap, ok := plugin.Input.Value
+// 	if !ok {
+// 		return of, errors.New("Plugin Input is not a map")
+// 	}
+
+// 	// Initialize OpenAIFunctionParameters
+// 	of.Parameters = types.OpenAIFunctionParameters{
+// 		Type:       "object",
+// 		Properties: make(map[string]types.OpenAiPropertyDescription),
+// 		Required:   []string{},
+// 	}
+
+// 	// Loop through Plugin Input to populate OpenAIFunctionParameters
+// 	for key, value := range inputMap {
+// 		// Determine the type of the property
+// 		var valueType string
+// 		switch value.(type) {
+// 		case string:
+// 			valueType = "string"
+// 		case int:
+// 			valueType = "integer"
+// 		case float64:
+// 			valueType = "number"
+// 		case bool:
+// 			valueType = "boolean"
+// 		case []interface{}:
+// 			valueType = "array"
+// 		case map[string]interface{}:
+// 			valueType = "object"
+// 		default:
+// 			valueType = "unknown"
+// 		}
+
+// 		// Create OpenAiPropertyDescription
+// 		property := types.OpenAiPropertyDescription{
+// 			Type: valueType,
+// 		}
+
+// 		// Add to OpenAIFunctionParameters
+// 		of.Parameters.Properties[key] = property
+// 		of.Parameters.Required = append(of.Parameters.Required, key)
+// 	}
+
+// 	return of, nil
+// }
 
 func (p *GPT) do(question string) (res types.OpenAIResponse, err error) {
 	reqModel := types.OpenAIWithFunctionRequest{
@@ -194,16 +280,16 @@ func (p *GPT) do(question string) (res types.OpenAIResponse, err error) {
 // input 为json格式, 看起来应该是:
 // {"prompt":{"system":""},"max_tokens":1,"temperature":1.2,"model":""}
 func (p *GPT) parseInput(plugin types.Plugin) (input types.PluginGPTInput, err error) {
-	if plugin.Input.Type == "json" {
-		// 解析json
-		p.log("input value: %s", plugin.Input.Value)
+	// if plugin.Input.Type == "json" {
+	// 	// 解析json
+	// 	p.log("input value: %s", plugin.Input.Value)
 
-		err = json.Unmarshal([]byte(plugin.Input.Value.(string)), &input)
-		if err != nil {
-			p.error("parse input error: %v", err)
-			return input, errors.WithMessage(err, "parse input error")
-		}
-	}
+	// 	err = json.Unmarshal([]byte(plugin.Input.Value.(string)), &input)
+	// 	if err != nil {
+	// 		p.error("parse input error: %v", err)
+	// 		return input, errors.WithMessage(err, "parse input error")
+	// 	}
+	// }
 
 	return input, errors.New("invalid input type, now only support json format")
 }
