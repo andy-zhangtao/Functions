@@ -49,7 +49,3 @@ type PluginReference struct {
 	Up   int   `bson:"up" json:"up"`
 	Down []int `bson:"down" json:"down"`
 }
-
-const (
-	CtxPluginGPT = "x-ctx-gpt-instance"
-)
