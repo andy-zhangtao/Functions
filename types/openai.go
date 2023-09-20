@@ -73,3 +73,8 @@ type OpenAIFunctionCallName struct {
 var OpenAIFunctionCALLAuto = PtrString("auto")
 
 func PtrString(s string) *string { return &s }
+
+const (
+	OpenAIStop   = "stop"
+	OpenAILength = "length"
+)

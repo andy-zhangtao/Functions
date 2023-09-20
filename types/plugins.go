@@ -26,7 +26,7 @@ type Plugin struct {
 	Name       string          `bson:"name" json:"name"`
 	Descript   string          `bson:"descript" json:"descript"`
 	Module     string          `bson:"module" json:"module"`
-	Input      PluginIO        `bson:"input" json:"input"`
+	Input      []PluginIO      `bson:"input" json:"input"`
 	Reference  PluginReference `bson:"reference" json:"reference"`
 	InvokeType string          `bson:"invoke_type" json:"invoke_type"`
 	InvokeURL  string          `bson:"invoke_url" json:"invoke_url"`
@@ -34,6 +34,14 @@ type Plugin struct {
 }
 
 // PluginIO defines the Input/Output structure for a Plugin
+//
+//	{
+//	    "name": "work_id",
+//	    "value": {
+//	        "type": "string",
+//	        "description": "name of the plugin"
+//	    }
+//	}
 type PluginIO struct {
 	Name  string     `bson:"name" json:"name"`
 	Value PluginType `bson:"value" json:"value"`

@@ -4,9 +4,14 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"strconv"
+	"strings"
 
+	"github.com/andy-zhangtao/Functions/tools/tgpt"
+	"github.com/andy-zhangtao/Functions/tools/tplugins"
 	"github.com/andy-zhangtao/Functions/types"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -17,7 +22,8 @@ type GPT struct {
 	plugin  types.Plugin
 	c       GPTConfig
 
-	wfc *types.WorkflowContext
+	nextPlugin types.Plugin
+	wfc        *types.WorkflowContext
 
 	getPluginWithID func(id int) ([]types.Plugin, error)
 }
@@ -64,7 +70,7 @@ func (p *GPT) Initialize(plugin types.Plugin) error {
 	p.log("GPT plugin initialized with [%+v]", plugin)
 	p.plugin = plugin
 
-	input, err := p.parseInput(plugin)
+	input, err := p.parseGPTPlugin(plugin)
 	if err != nil {
 		return errors.WithMessage(err, "parse input error")
 	}
@@ -96,9 +102,38 @@ func (p *GPT) Execute(ctx *types.WorkflowContext, question string) error {
 	}
 
 	p.log("GPT plugin execute with response: %+v", response)
-	// TODO parse function calling result
+
+	choice := response.Choices[0]
+	if strings.Contains(choice.Message.Content, "openai response error:") {
+		// 如果返回的消息中包含openai response error:，则说明预测出错了
+		return fmt.Errorf("%s", choice.Message.Content)
+	}
+
+	if choice.FinishReason == types.OpenAIStop &&
+		choice.Message.FunctionCall == nil {
+		return errors.Errorf("stop and function call is nil")
+	}
+
+	if choice.FinishReason == types.OpenAILength {
+		return errors.Errorf("too length, the limit is %d, but now I has generate %d ", p.c.MaxTokens, len(choice.Message.Content))
+	}
+
+	result := make(map[string]interface{})
 	// If parse success ,then fill up the result with down plugin result
-	// key = "plugin_N_input"
+	if choice.Message.FunctionCall != nil {
+		pm, err := tgpt.ParseFCArgumentsToMap(choice.Message.FunctionCall.Arguments)
+		if err != nil {
+			return errors.WithMessage(err, "parse function call arguments error")
+		}
+
+		for k, v := range pm {
+			result[k] = v
+		}
+	}
+
+	// Fill up the result with the content
+	p.wfc.Set(tplugins.PluginNameInChain(p.nextPlugin.Name), result)
+	p.log("GPT next plugin with input: %+v", result)
 	return nil
 }
 
@@ -121,7 +156,6 @@ func (p *GPT) messages(question string) []types.OpenAIMessage {
 }
 
 func (p *GPT) functingCalling() ([]types.OpenAIFunction, error) {
-	// TODO get plugin via reference down plugins
 	// 一般来说GPT模块应该是工作流第一个模块，所以这里不需要获取up plugin
 	if len(p.plugin.Reference.Down) == 0 {
 		return nil, nil
@@ -139,67 +173,49 @@ func (p *GPT) functingCalling() ([]types.OpenAIFunction, error) {
 		return nil, errors.Errorf("not find plugin with %d", downPluginKey)
 	}
 
-	return nil, nil
+	p.nextPlugin = downPlugins[0]
+	return p.generateOpenAIFunctionViaPlugin(downPlugins[0])
 }
 
 // generateOpenAIFunctionViaPlugin 通过plugin生成OpenAIFunction
 // 通过Plugin的name和describe填充OpenAIFunction数据，重点是对Plugin Input 的提取和峰值
 // plugin的示例如下:
 // {}
-// func (p *GPT) generateOpenAIFunctionViaPlugin(plugin types.Plugin) (of types.OpenAIFunction, err error) {
-// 	// Initialize OpenAIFunction
-// 	of = types.OpenAIFunction{
-// 		Name:        plugin.Name,
-// 		Description: plugin.Descript,
-// 	}
+func (p *GPT) generateOpenAIFunctionViaPlugin(plugin types.Plugin) (result []types.OpenAIFunction, err error) {
+	// Initialize OpenAIFunction
+	of := types.OpenAIFunction{
+		Name:        plugin.Name,
+		Description: plugin.Descript,
+	}
 
-// 	// Check if Plugin Input is a map
-// 	// TODO: Check if Plugin Input is a valid map
-// 	inputMap, ok := plugin.Input.Value
-// 	if !ok {
-// 		return of, errors.New("Plugin Input is not a map")
-// 	}
+	// Check if Plugin Input is a map
+	inputMap := plugin.Input
 
-// 	// Initialize OpenAIFunctionParameters
-// 	of.Parameters = types.OpenAIFunctionParameters{
-// 		Type:       "object",
-// 		Properties: make(map[string]types.OpenAiPropertyDescription),
-// 		Required:   []string{},
-// 	}
+	// Initialize OpenAIFunctionParameters
+	of.Parameters = types.OpenAIFunctionParameters{
+		Type:       "object",
+		Properties: make(map[string]types.OpenAiPropertyDescription),
+		Required:   []string{},
+	}
 
-// 	// Loop through Plugin Input to populate OpenAIFunctionParameters
-// 	for key, value := range inputMap {
-// 		// Determine the type of the property
-// 		var valueType string
-// 		switch value.(type) {
-// 		case string:
-// 			valueType = "string"
-// 		case int:
-// 			valueType = "integer"
-// 		case float64:
-// 			valueType = "number"
-// 		case bool:
-// 			valueType = "boolean"
-// 		case []interface{}:
-// 			valueType = "array"
-// 		case map[string]interface{}:
-// 			valueType = "object"
-// 		default:
-// 			valueType = "unknown"
-// 		}
+	// Loop through Plugin Input to populate OpenAIFunctionParameters
+	for _, param := range inputMap {
+		// Determine the type of the property
+		valueType := param.Value.Type
 
-// 		// Create OpenAiPropertyDescription
-// 		property := types.OpenAiPropertyDescription{
-// 			Type: valueType,
-// 		}
+		// Create OpenAiPropertyDescription
+		property := types.OpenAiPropertyDescription{
+			Type:        valueType,
+			Description: param.Value.Description,
+		}
 
-// 		// Add to OpenAIFunctionParameters
-// 		of.Parameters.Properties[key] = property
-// 		of.Parameters.Required = append(of.Parameters.Required, key)
-// 	}
+		// Add to OpenAIFunctionParameters
+		of.Parameters.Properties[param.Name] = property
+		of.Parameters.Required = append(of.Parameters.Required, param.Name)
+	}
 
-// 	return of, nil
-// }
+	return []types.OpenAIFunction{of}, nil
+}
 
 func (p *GPT) do(question string) (res types.OpenAIResponse, err error) {
 	reqModel := types.OpenAIWithFunctionRequest{
@@ -276,20 +292,43 @@ func (p *GPT) do(question string) (res types.OpenAIResponse, err error) {
 	return accResponse, nil
 }
 
-// parseInput 解析输入
-// input 为json格式, 看起来应该是:
-// {"prompt":{"system":""},"max_tokens":1,"temperature":1.2,"model":""}
-func (p *GPT) parseInput(plugin types.Plugin) (input types.PluginGPTInput, err error) {
-	// if plugin.Input.Type == "json" {
-	// 	// 解析json
-	// 	p.log("input value: %s", plugin.Input.Value)
+// parseGPTPlugin 解析输入
+func (p *GPT) parseGPTPlugin(plugin types.Plugin) (input types.PluginGPTInput, err error) {
 
-	// 	err = json.Unmarshal([]byte(plugin.Input.Value.(string)), &input)
-	// 	if err != nil {
-	// 		p.error("parse input error: %v", err)
-	// 		return input, errors.WithMessage(err, "parse input error")
-	// 	}
-	// }
-
-	return input, errors.New("invalid input type, now only support json format")
+	input = types.PluginGPTInput{}
+	for _, v := range plugin.Input {
+		switch v.Name {
+		case "prompt":
+			_prompt := v.Value.Description
+			if _prompt == "" {
+				return input, errors.New("invalid prompt")
+			}
+			input.Prompt.System = _prompt
+		case "max_tokens":
+			_maxTokens := v.Value.Description
+			if _maxTokens == "" {
+				return input, errors.New("invalid max_tokens")
+			}
+			tokens, _ := strconv.Atoi(_maxTokens)
+			input.MaxTokens = tokens
+		case "temperature":
+			_temperature := v.Value.Description
+			if _temperature == "" {
+				return input, errors.New("invalid temperature")
+			}
+			temperature, _ := strconv.ParseFloat(_temperature, 64)
+			input.Temperature = temperature
+		case "model":
+			_model := v.Value.Description
+			if _model == "" {
+				return input, errors.New("invalid model")
+			}
+			input.Model = _model
+		default:
+			continue
+		}
+	}
+	return input, nil
 }
+
+func (p *GPT) parseFunctionCallResult()
