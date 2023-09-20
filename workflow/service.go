@@ -26,7 +26,8 @@ func NewWorkFlowService(store *MongoStore, traceId string) *WorkFlowService {
 	wfs.initContext()
 
 	wfs.pluginMap = map[string]plugins.Plugin{
-		"gpt": plugins.NewGPTPlugin(plugins.GPTConfig{}, wfs.ctx),
+		"weaviate-function-calling": plugins.NewGPTPlugin(plugins.GPTConfig{}, wfs.ctx),
+		"weaviate":                  plugins.NewWeaviatePlugin(plugins.WeaviateConfig{}, wfs.ctx),
 	}
 	return wfs
 }

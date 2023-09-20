@@ -2,7 +2,7 @@
 
 ```json
 {
-    "id": 1,
+    "plugin_key": 1,
     "name": "weaviate",
     "descript": "This is a Weaviate plugin",
     "module": "",
@@ -30,7 +30,7 @@
         }
     ],
     "reference": {
-        "up": "",
+        "up":-1,
         "down": []
     },
     "invoke_type": "sync",

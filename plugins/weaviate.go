@@ -110,13 +110,13 @@ func (p *Weaviate) Execute(ctx *types.WorkflowContext, question string) error {
 	return nil
 }
 
-func (p *Weaviate) Finalize() error {
+func (p *Weaviate) Finalize() (*types.WorkflowContext, error) {
 	if p.err != nil {
-		return p.err
+		return nil, p.err
 	}
 
 	p.log("Weaviate plugin finalized")
-	return nil
+	return nil, nil
 }
 
 func (p *Weaviate) parseWeaviatePlugin(plugin types.Plugin) (*WeaviateAction, error) {

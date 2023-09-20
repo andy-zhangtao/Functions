@@ -27,8 +27,8 @@ context -> context : Write Output\n(Data: {"stepN_output": value})
 
 ```json
 {
-    "id":1,
-    "name":"plugin1",
+    "plugin_key":2,
+    "name":"weaviate-function-calling",
     "descript":"",
     "module":"gpt",
     "input":[
@@ -46,12 +46,12 @@ context -> context : Write Output\n(Data: {"stepN_output": value})
         },
         {
             "name":"model",
-            "description":"gpt-3.5-tubro",
+            "description":"gpt-3.5-turbo-0613",
         }
     ],
     "reference":{
-        "up":"",
-        "down":[]
+        "up":-1,
+        "down":[1]
     },
     "invoke_type":"",
     "invoke_url":"",
