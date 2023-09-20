@@ -7,6 +7,7 @@ import (
 	traceid "github.com/andy-zhangtao/Functions/tools/trace_id"
 	"github.com/andy-zhangtao/Functions/types"
 	"github.com/andy-zhangtao/Functions/workflow"
+	"github.com/sirupsen/logrus"
 )
 
 // func WorkFlowHandler(w http.ResponseWriter, r *http.Request) {
@@ -98,8 +99,12 @@ func WorkFlowHandler(w http.ResponseWriter, r *http.Request) {
 	// Initialize WorkFlowService
 	service := workflow.NewWorkFlowService(mongoStore, traceId)
 
+	logrus.Infof("WorkFlowHandler with %s", traceId)
+
 	// Initialize APIHandler
 	apiHandler := workflow.NewAPIHandler(service, traceId)
+
+	logrus.Infof("HandleWorkFlowRequest with %s", traceId)
 
 	// Handle the API request
 	apiHandler.HandleWorkFlowRequest(w, r)

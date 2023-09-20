@@ -37,8 +37,10 @@ func (handler *APIHandler) error(format string, args ...interface{}) {
 
 // HandleWorkFlowRequest handles the /v1/workflow API endpoint
 func (handler *APIHandler) HandleWorkFlowRequest(w http.ResponseWriter, r *http.Request) {
+
 	// For demonstration, we assume the workflow ID is passed as a query parameter
 	workflowID := r.URL.Query().Get("id")
+	handler.log("HandleWorkFlowRequest with %s", workflowID)
 
 	var req types.WorkFlowRequest
 
