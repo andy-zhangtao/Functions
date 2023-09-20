@@ -44,11 +44,14 @@ func NewGPTPlugin(c GPTConfig, fc *types.WorkflowContext) *GPT {
 		traceId = _traceId.(string)
 	}
 
-	return &GPT{
+	g := &GPT{
 		traceId: traceId,
 		c:       c,
 		wfc:     fc,
 	}
+
+	g.log("GPT plugin initialized with [%+v]", c)
+	return g
 }
 
 func (p *GPT) log(format string, args ...interface{}) {

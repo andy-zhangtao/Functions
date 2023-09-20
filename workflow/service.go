@@ -32,10 +32,12 @@ func NewWorkFlowService(store *MongoStore, traceId string) *WorkFlowService {
 }
 
 func (service *WorkFlowService) initContext() {
+	service.log("initContext")
 	service.ctx = types.NewWorkFlowContext()
 
 	service.ctx.Set(types.TraceID, service.traceId)
 	service.ctx.Set(types.GetPluginWithID, service.Store.GetPluginByPluginKey)
+	service.log("initContext done")
 }
 
 func (service *WorkFlowService) log(format string, args ...interface{}) {
