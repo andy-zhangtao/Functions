@@ -51,18 +51,16 @@ func NewGPTPlugin(c GPTConfig, fc *types.WorkflowContext) *GPT {
 	}
 }
 
-func (p *GPT) log(format string, args ...interface{}) error {
-	format = "[GPTFunctionCall]-[info]: %s " + format
+func (p *GPT) log(format string, args ...interface{}) {
+	format = "[GPT-FC-Plugin]-[info]: %s " + format
 	args = append([]interface{}{p.traceId}, args...)
 	logrus.Infof(format, args)
-	return nil
 }
 
-func (p *GPT) error(format string, args ...interface{}) error {
-	format = "[GPTFunctionCall]-[error]: %s " + format
+func (p *GPT) error(format string, args ...interface{}) {
+	format = "[GPT-FC-Plugin]-[error]: %s " + format
 	args = append([]interface{}{p.traceId}, args...)
 	logrus.Infof(format, args)
-	return nil
 }
 
 func (p *GPT) Initialize(plugin types.Plugin) error {
@@ -330,5 +328,3 @@ func (p *GPT) parseGPTPlugin(plugin types.Plugin) (input types.PluginGPTInput, e
 	}
 	return input, nil
 }
-
-func (p *GPT) parseFunctionCallResult()
