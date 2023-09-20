@@ -31,10 +31,24 @@ context -> context : Write Output\n(Data: {"stepN_output": value})
     "name":"plugin1",
     "descript":"",
     "module":"gpt",
-    "input":{
-        "type":"text",
-        "value":"hello world"
-    },
+    "input":[
+        {
+            "name":"prompt",
+            "description":"system prompt",
+        },
+        {
+            "name":"max_tokens",
+            "description":"1000",
+        },
+        {
+            "name":"temperature",
+            "description":"0.7",
+        },
+        {
+            "name":"model",
+            "description":"gpt-3.5-tubro",
+        }
+    ],
     "reference":{
         "up":"",
         "down":[]

@@ -90,6 +90,11 @@ func WorkFlowHandler(w http.ResponseWriter, r *http.Request) {
 		traceId,
 	)
 
+	if mongoStore == nil {
+		w.Write([]byte("mongoStore is nil"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	// Initialize WorkFlowService
 	service := workflow.NewWorkFlowService(mongoStore, traceId)
 

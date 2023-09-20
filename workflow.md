@@ -47,3 +47,17 @@ deactivate WS
 6. WorkFlow Service解析Step Ids。
 7. WorkFlow Service依次执行Step。
 8. WorkFlow Service汇总结果并返回给用户。
+
+## How to use workflow?
+
+1. 用户通过`/api/workflow?id=12345` 来请求特定的Workflow。请求参数如下:
+```json
+{
+    "action":"execute", // 执行workflow时，只能为execute。
+    "user":"", // 用户名
+    "name":"", 
+    "question":"",
+}
+```
+2. 获取`Workflow`中规定的`Plugin`。
+3. 依次执行`Plugin`。 

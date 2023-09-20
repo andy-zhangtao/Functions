@@ -7,7 +7,6 @@ package workflow
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/andy-zhangtao/Functions/tools/flogs"
@@ -47,15 +46,19 @@ func NewMongoStore(uri, db, traceId string) *MongoStore {
 	clientOpts := options.Client().ApplyURI(uri)
 	client, err := mongo.Connect(context.TODO(), clientOpts)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Errorf("connect to mongo error: %v", err)
+		return nil
 		// return nil, fmt.Errorf("connect to mongo error: %w", err)
 	}
 
+	logrus.Infof("Ping MongoDB!")
 	err = client.Ping(context.Background(), readpref.Primary())
 	if err != nil {
-		log.Fatal(err)
+		logrus.Errorf("ping mongo error: %v", err)
+		return nil
 	}
 
+	logrus.Infof("Connected to MongoDB!")
 	return &MongoStore{
 		Client:  client,
 		db:      db,
