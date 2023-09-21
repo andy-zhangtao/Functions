@@ -11,6 +11,8 @@ import (
 	"github.com/andy-zhangtao/Functions/types"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/weaviate/weaviate-go-client/v4/weaviate"
+	"github.com/weaviate/weaviate-go-client/v4/weaviate/auth"
 )
 
 // WorkFlowService is the main service for handling workflows
@@ -32,7 +34,13 @@ func NewWorkFlowService(store *MongoStore, traceId string) *WorkFlowService {
 			Url:  "https://api.openai.com/v1/chat/completions",
 			SKey: os.Getenv(types.PluginGPTSKey),
 		}, wfs.ctx),
-		"weaviate": plugins.NewWeaviatePlugin(plugins.WeaviateConfig{}, wfs.ctx),
+		"weaviate": plugins.NewWeaviatePlugin(plugins.WeaviateConfig{
+			C: weaviate.Config{
+				Host:       os.Getenv(types.EnvWeaviateHost),
+				Scheme:     os.Getenv(types.EnvWeaviateSchema),
+				AuthConfig: auth.ApiKey{Value: os.Getenv(types.EnvWewaviateKey)},
+			},
+		}, wfs.ctx),
 	}
 	return wfs
 }
