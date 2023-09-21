@@ -80,6 +80,7 @@ func (p *Weaviate) Initialize(plugin types.Plugin) error {
 	}
 
 	p.log("action %+v", action)
+	p.action = action
 	return nil
 }
 
