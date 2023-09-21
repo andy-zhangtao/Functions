@@ -195,7 +195,7 @@ func (p *Weaviate) convertCreateAction(input map[string]interface{}) WeaviateAct
 		data: WeaviateModelDiary{
 			Title: input["title"].(string),
 			Body:  input["body"].(string),
-			Tags:  input["tags"].([]string),
+			Tags:  input["tags"].(string),
 			User:  input["user"].(string),
 			Date:  input["date"].(string),
 		},

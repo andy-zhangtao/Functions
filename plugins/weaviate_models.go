@@ -6,11 +6,11 @@ type WeaviateModel struct {
 }
 
 type WeaviateModelDiary struct {
-	Title string   `json:"title"`
-	Body  string   `json:"body"`
-	Tags  []string `json:"tags"`
-	User  string   `json:"user"`
-	Date  string   `json:"date"`
+	Title string `json:"title"`
+	Body  string `json:"body"`
+	Tags  string `json:"tags"`
+	User  string `json:"user"`
+	Date  string `json:"date"`
 }
 
 type WeaviateAction struct {
