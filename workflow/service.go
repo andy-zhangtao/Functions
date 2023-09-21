@@ -5,6 +5,8 @@ package workflow
 // ExecuteWorkFlow 函数，用于执行工作流。这个函数会根据工作流ID读取工作流，检查动作是否为 "execute"，读取并执行步骤，并最终返回结果。
 
 import (
+	"os"
+
 	"github.com/andy-zhangtao/Functions/plugins"
 	"github.com/andy-zhangtao/Functions/types"
 	"github.com/pkg/errors"
@@ -26,8 +28,11 @@ func NewWorkFlowService(store *MongoStore, traceId string) *WorkFlowService {
 	wfs.initContext()
 
 	wfs.pluginMap = map[string]plugins.Plugin{
-		"weaviate-function-calling": plugins.NewGPTPlugin(plugins.GPTConfig{}, wfs.ctx),
-		"weaviate":                  plugins.NewWeaviatePlugin(plugins.WeaviateConfig{}, wfs.ctx),
+		"weaviate-function-calling": plugins.NewGPTPlugin(plugins.GPTConfig{
+			Url:  "https://api.openai.com/v1/chat/completions",
+			SKey: os.Getenv(types.PluginGPTSKey),
+		}, wfs.ctx),
+		"weaviate": plugins.NewWeaviatePlugin(plugins.WeaviateConfig{}, wfs.ctx),
 	}
 	return wfs
 }

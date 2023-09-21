@@ -57,13 +57,13 @@ func NewWeaviatePlugin(c WeaviateConfig, fc *types.WorkflowContext) *Weaviate {
 func (p *Weaviate) log(format string, args ...interface{}) {
 	format = "[Weaviate-Plugin]-[info]: %s " + format
 	args = append([]interface{}{p.traceId}, args...)
-	logrus.Infof(format, args)
+	logrus.Infof(format, args...)
 }
 
 func (p *Weaviate) error(format string, args ...interface{}) {
 	format = "[Weaviate-Plugin]-[error]: %s " + format
 	args = append([]interface{}{p.traceId}, args...)
-	logrus.Infof(format, args)
+	logrus.Infof(format, args...)
 }
 
 func (p *Weaviate) Initialize(plugin types.Plugin) error {

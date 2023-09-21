@@ -57,13 +57,13 @@ func NewGPTPlugin(c GPTConfig, fc *types.WorkflowContext) *GPT {
 func (p *GPT) log(format string, args ...interface{}) {
 	format = "[GPT-FC-Plugin]-[info]: %s " + format
 	args = append([]interface{}{p.traceId}, args...)
-	logrus.Infof(format, args)
+	logrus.Infof(format, args...)
 }
 
 func (p *GPT) error(format string, args ...interface{}) {
 	format = "[GPT-FC-Plugin]-[error]: %s " + format
 	args = append([]interface{}{p.traceId}, args...)
-	logrus.Infof(format, args)
+	logrus.Infof(format, args...)
 }
 
 func (p *GPT) Initialize(plugin types.Plugin) error {

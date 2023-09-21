@@ -8,3 +8,7 @@ type PluginGPTInput struct {
 	Temperature float64 `json:"temperature"`
 	Model       string  `json:"model"`
 }
+
+const (
+	PluginGPTSKey = "GPT_SKEY"
+)
