@@ -13,4 +13,8 @@ curl --location 'https://xxxx/api/workflow?id=12345' \
 }'
 ```
 
+> `id` is the workflow id. 
+
 > The `name` is a optional value, needn't set it.
+
+> user is the user's name, it will be store in weaviate. 
