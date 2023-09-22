@@ -83,6 +83,9 @@ func (service *WorkFlowService) ExecuteWorkFlow(workflowID string, query types.W
 
 	service.log("Executing workflow: %+v", workflow)
 
+	service.ctx.Set(types.CtxOriginQuery, types.WorkFlowBaseInfo{
+		User: query.User,
+	})
 	// Execute steps and collect results
 	stepResults := make(map[string]interface{})
 	// Read steps by IDs

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/andy-zhangtao/Functions/tools/tgpt"
 	"github.com/andy-zhangtao/Functions/tools/tplugins"
@@ -24,6 +25,7 @@ type GPT struct {
 
 	nextPlugin types.Plugin
 	wfc        *types.WorkflowContext
+	baseInfo   types.WorkFlowBaseInfo
 
 	getPluginWithID func(id int) ([]types.Plugin, error)
 }
@@ -96,6 +98,9 @@ func (p *GPT) Initialize(plugin types.Plugin) error {
 func (p *GPT) Execute(ctx *types.WorkflowContext, question string) error {
 	p.log("GPT plugin execute with question: %s", question)
 
+	base := ctx.Get(types.CtxOriginQuery).(types.WorkFlowBaseInfo)
+	p.baseInfo = base
+
 	response, err := p.do(question)
 	if err != nil {
 		p.error("do gpt error: %v", err)
@@ -147,13 +152,31 @@ func (p *GPT) messages(question string) []types.OpenAIMessage {
 	return []types.OpenAIMessage{
 		{
 			Role:    "system",
-			Content: p.c.SystemPrompt,
+			Content: p.systemPrompt(),
 		},
 		{
 			Role:    "user",
 			Content: question,
 		},
 	}
+}
+
+func (p *GPT) systemPrompt() string {
+	return fmt.Sprintf(p.c.SystemPrompt, p.BeijingTime(), p.baseInfo.User)
+}
+
+func (p *GPT) BeijingTime() string {
+	// Load the Beijing time zone
+	loc, err := time.LoadLocation("Asia/Shanghai")
+	if err != nil {
+		panic(err)
+	}
+
+	// Get the current time in Beijing
+	now := time.Now().In(loc)
+
+	// Format the time as RFC3389
+	return now.Format(time.RFC3339)
 }
 
 func (p *GPT) functingCalling() ([]types.OpenAIFunction, error) {

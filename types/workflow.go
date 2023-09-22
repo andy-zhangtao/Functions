@@ -73,3 +73,7 @@ const (
 	MongoDBSteps    = "steps"
 	MongoDBPlugins  = "plugins"
 )
+
+type WorkFlowBaseInfo struct {
+	User string
+}
