@@ -5,4 +5,5 @@ const (
 	TraceID         = "x-traceId"
 	GetPluginWithID = "x-fun-getPluginWithID"
 	CtxPluginGPT    = "x-ctx-gpt-instance"
+	CtxOriginQuery  = "x-ctx-origin-query"
 )

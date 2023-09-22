@@ -25,6 +25,7 @@ type GPT struct {
 
 	nextPlugin types.Plugin
 	wfc        *types.WorkflowContext
+	baseInfo   types.WorkFlowBaseInfo
 
 	getPluginWithID func(id int) ([]types.Plugin, error)
 }
@@ -97,6 +98,9 @@ func (p *GPT) Initialize(plugin types.Plugin) error {
 func (p *GPT) Execute(ctx *types.WorkflowContext, question string) error {
 	p.log("GPT plugin execute with question: %s", question)
 
+	base := ctx.Get(types.CtxOriginQuery).(types.WorkFlowBaseInfo)
+	p.baseInfo = base
+
 	response, err := p.do(question)
 	if err != nil {
 		p.error("do gpt error: %v", err)
@@ -158,7 +162,7 @@ func (p *GPT) messages(question string) []types.OpenAIMessage {
 }
 
 func (p *GPT) systemPrompt() string {
-	return fmt.Sprintf(p.c.SystemPrompt, p.BeijingTime())
+	return fmt.Sprintf(p.c.SystemPrompt, p.BeijingTime(), p.baseInfo.User)
 }
 
 func (p *GPT) BeijingTime() string {
