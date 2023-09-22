@@ -50,3 +50,8 @@ type DirayQueryResponse struct {
 	Code    int      `json:"code"`
 	Records []string `json:"records"`
 }
+
+const (
+	PluginTypeWeaviateCreateAction = "1"
+	PluginTypeWeaviateQueryAction  = "2"
+)
