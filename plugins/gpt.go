@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/andy-zhangtao/Functions/tools/tgpt"
 	"github.com/andy-zhangtao/Functions/tools/tplugins"
@@ -147,13 +148,31 @@ func (p *GPT) messages(question string) []types.OpenAIMessage {
 	return []types.OpenAIMessage{
 		{
 			Role:    "system",
-			Content: p.c.SystemPrompt,
+			Content: p.systemPrompt(),
 		},
 		{
 			Role:    "user",
 			Content: question,
 		},
 	}
+}
+
+func (p *GPT) systemPrompt() string {
+	return fmt.Sprintf(p.c.SystemPrompt, p.BeijingTime())
+}
+
+func (p *GPT) BeijingTime() string {
+	// Load the Beijing time zone
+	loc, err := time.LoadLocation("Asia/Shanghai")
+	if err != nil {
+		panic(err)
+	}
+
+	// Get the current time in Beijing
+	now := time.Now().In(loc)
+
+	// Format the time as RFC3389
+	return now.Format(time.RFC3339)
 }
 
 func (p *GPT) functingCalling() ([]types.OpenAIFunction, error) {
